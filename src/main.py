@@ -1,214 +1,171 @@
-from langchain_ollama import OllamaLLM
-from langchain.agents import Tool, AgentExecutor, create_react_agent
-from langchain.prompts import PromptTemplate
-from langchain.output_parsers import StructuredOutputParser, ResponseSchema
-from typing import Dict, List, Optional
+import asyncio
+import os
 import json
+from dotenv import load_dotenv
+from typing import Dict, List
 
-# --- Mock Data ---
-MOCK_DATA = {
-    "employees": [
-        {
-            "id": "emp1",
-            "name": "John Doe",
-            "team": "Engineering",
-            "skills": ["python", "aws"],
-            "current_project": "ProjectA"
-        },
-        {
-            "id": "emp2",
-            "name": "Jane Smith",
-            "team": "DevOps",
-            "skills": ["kubernetes", "docker"],
-            "current_project": "ProjectB"
-        }
-    ],
-    "projects": [
-        {
-            "id": "proj1",
-            "name": "Cloud Migration",
-            "required_skills": ["aws", "kubernetes"],
-            "timeline": "3 months",
-            "description": "Migrate on-prem services to cloud"
-        }
-    ]
-}
+from langchain.tools import Tool
+from langchain.schema import HumanMessage
+from langchain.agents import AgentExecutor
+from langgraph.prebuilt import create_react_agent
+from langchain_groq import ChatGroq
+from langchain_mcp_adapters.client import MultiServerMCPClient
 
-# --- Tool Functions ---
-def get_employee_skills(employee_id: str) -> List[str]:
-    print(f"Getting skills for employee: {employee_id}")
-    try:
-        employee = next((e for e in MOCK_DATA["employees"] if e["id"] == employee_id), None)
-        return employee["skills"] if employee else []
-    except Exception as e:
-        print(f"Error in get_employee_skills: {e}")
-        return []
+# Load environment variables
+load_dotenv()
+GROQ_API_KEY = os.getenv("GROQ_API_KEY")
+if GROQ_API_KEY:
+    os.environ["GROQ_API_KEY"] = GROQ_API_KEY
+else:
+    print("Warning: GROQ_API_KEY not found in environment variables")
 
-def get_project_requirements(project_id: str) -> Dict:
-    print(f"Getting requirements for project: {project_id}")
-    try:
-        return next((p for p in MOCK_DATA["projects"] if p["id"] == project_id), {})
-    except Exception as e:
-        print(f"Error in get_project_requirements: {e}")
-        return {}
+# ------------------ LLM ------------------
+llm = ChatGroq(model="openai/gpt-oss-20b", temperature=0)
 
-def find_skill_matches(skill: str) -> List[Dict]:
-    print(f"Finding matches for skill: {skill}")
-    try:
-        return [e for e in MOCK_DATA["employees"] if skill in e["skills"]]
-    except Exception as e:
-        print(f"Error in find_skill_matches: {e}")
-        return []
-
-# --- Tools ---
-
-
-tools = [
-    Tool(
-        name="get_employee_skills",
-        func=get_employee_skills,
-        description="Gets the skills of a specific employee. Input: employee_id"
-    ),
-    Tool(
-        name="get_project_requirements",
-        func=get_project_requirements,
-        description="Gets the requirements of a specific project. Input: project_id"
-    ),
-    Tool(
-        name="find_skill_matches",
-        func=find_skill_matches,
-        description="Finds all employees who have a specific skill. Input: skill_name"
+# ------------------ Tool Wrapper ------------------
+def make_tool_for_agent(name: str, agent):
+    """Create a LangChain tool that wraps an MCP agent"""
+    def tool_func(query: str) -> str:
+        try:
+            print(f"DEBUG: Entering tool_func for {name}")
+            print(f"DEBUG: Query received: {query}")
+            print(f"DEBUG: Query type: {type(query)}")
+            print(f"DEBUG: Query repr: {repr(query)}")
+            
+            # Check if query is already a dict/list
+            if isinstance(query, (dict, list)):
+                print(f"DEBUG: Query is already structured data: {query}")
+                # If it's already structured, use it directly
+                if isinstance(query, list) and len(query) > 0:
+                    messages = {"messages": query}
+                else:
+                    messages = {"messages": [{"role": "user", "content": str(query)}]}
+            else:
+                # Create the message structure
+                messages = {"messages": [{"role": "user", "content": str(query)}]}
+            
+            print(f"DEBUG: Final messages structure: {messages}")
+            
+            # Use asyncio.run to handle the async call in a sync context
+            result = asyncio.run(agent.ainvoke(messages))
+            print(f"DEBUG: Agent result: {result}")
+            
+            output = result.get("output", str(result))
+            print(f"DEBUG: Extracted output: {output}")
+            return output
+        except Exception as e:
+            print(f"DEBUG: Exception in tool_func: {type(e).__name__}: {str(e)}")
+            print(f"DEBUG: Exception details: {e}")
+            import traceback
+            traceback.print_exc()
+            return f"Error querying {name}: {str(e)}"
+    
+    return Tool(
+        name=name,
+        func=tool_func,
+        description=f"Query the {name} MCP server agent for data and analysis"
     )
-]
 
-# --- LLM & Parser ---
-llm = OllamaLLM(model="mistral")
-
-response_schemas = [
-    ResponseSchema(
-        name="recommendation",
-        description="The final structured recommendation as a JSON object"
-    )
-]
-
-output_parser = StructuredOutputParser.from_response_schemas(response_schemas)
-
-# --- Prompt Template ---
-prompt = PromptTemplate.from_template("""
-You are a Skill Gap Analyzer helping managers make decisions about team resources.
-
-{format_instructions}
-
-You MUST respond with a JSON object containing a 'recommendation' field with ONE of these exact formats:
-
-1. For upskilling:
-{{
-  "recommendation": {{
-    "type": "UPSKILL",
-    "employee_name": "John Doe",
-    "current_skills": ["python", "aws"],
-    "skill_to_learn": "kubernetes",
-    "training_time": "3 weeks",
-    "reason": "John already has related cloud skills and can quickly learn Kubernetes.",
-    "risk_level": "low"
-  }}
-}}
-
-2. For transfers:
-{{
-  "recommendation": {{
-    "type": "TRANSFER",
-    "employee_name": "Jane Smith",
-    "current_team": "DevOps",
-    "skills": ["kubernetes", "docker"],
-    "notice_period": "2 weeks",
-    "impact": "Minimal impact on current project.",
-    "risk_level": "medium"
-  }}
-}}
-
-3. For hiring:
-{{
-  "recommendation": {{
-    "type": "HIRE",
-    "required_skills": ["aws", "kubernetes"],
-    "experience_level": "senior",
-    "must_have_skills": ["kubernetes"],
-    "nice_to_have_skills": ["aws"],
-    "time_to_hire": "1-2 months",
-    "risk_level": "medium"
-  }}
-}}
-
-Use tools if needed. Output must start with Final Answer: followed by the JSON object.
-Current objective: {input}
-
-{agent_scratchpad}
-""")
-
-# --- Analysis Function ---
-def analyze_project_gaps(project_id: str) -> Optional[Dict]:
-    print(f"\nStarting analysis for project '{project_id}'...")
-
+# ------------------ MCP Agent Setup ------------------
+async def setup_agents():
+    """Setup MCP agents for different servers"""
+    agents = {}
+    
+    # Create MCP client and get tools directly
     try:
-        project = get_project_requirements(project_id)
-        if not project:
-            print(f"Project {project_id} not found.")
-            return None
-
-        format_instructions = output_parser.get_format_instructions()
-
-        format_instructions = output_parser.get_format_instructions()
-
-        # Fix: Inject required template variables
-        agent = create_react_agent(
-            llm=llm,
-            tools=tools,
-            prompt=prompt.partial(
-                format_instructions=format_instructions,
-                tools="\n".join([f"{tool.name}: {tool.description}" for tool in tools]),
-                tool_names=", ".join([tool.name for tool in tools])
-            )
-        )
-
-        executor = AgentExecutor(
-            agent=agent,
-            tools=tools,
-            verbose=True,
-            handle_parsing_errors=True,
-            max_iterations=5
-        )
-
-        result = executor.invoke({
-            "input": f"""Analyze project '{project_id}'.
-            Step 1: Get project requirements.
-            Step 2: Check team skills.
-            Step 3: Recommend ONE option based on the project timeline ({project['timeline']}).
-            Step 4: Final output must be valid JSON with a single recommendation."""
+        client = MultiServerMCPClient({
+            "MainApp": {
+                "url": "http://127.0.0.1:4200/mcp",
+                "transport": "streamable_http"
+            }
         })
+        tools = await client.get_tools()
+        agents["MainApp"] = {"client": client, "tools": tools}
+        print("✓ MainApp MCP tools loaded successfully")
+        print(f"✓ Available tools: {[tool.name for tool in tools]}")
+    except Exception as e:
+        print(f"Error creating MCP client: {e}")
+        return {}
+    
+    return agents
 
-        # --- Debug: Raw Output ---
-        raw_output = result.get("output", "")
-        print("\n--- Raw LLM Output ---")
-        print(raw_output)
+async def analyze_project_gaps(project_id: str, agents: Dict):
+    """Analyze project gaps using MCP agents"""
+    print(f"DEBUG: analyze_project_gaps called with project_id: {project_id}")
+    print(f"DEBUG: Available agents: {list(agents.keys())}")
+    
+    if not agents:
+        print("No agents available for analysis")
+        return None
+    
+    # Get the MCP tools directly
+    main_app = agents.get("MainApp")
+    if not main_app:
+        print("MainApp not available")
+        return None
+    
+    tools = main_app["tools"]
+    print(f"DEBUG: Using {len(tools)} MCP tools directly")
+    
+    # Create the main analysis agent with MCP tools
+    print("DEBUG: Creating react agent...")
+    react_agent = create_react_agent(model=llm, tools=tools)
+    print("DEBUG: Creating agent executor...")
+    
+    # Analysis prompt
+    input_text = f"""
+    Analyze project '{project_id}' for skill gaps and resource needs.
+    
+    Step 1: Use the available tools to get employee data and skills
+    Step 2: Use the available tools to get project requirements
+    Step 3: Analyze team skills vs project requirements
+    Step 4: Provide ONE recommendation (UPSKILL OR TRANSFER OR HIRE) based on project timeline
+    
+    Output must be valid JSON with a single recommendation in this format:
+    {{
+        "recommendation": {{
+            "type": "UPSKILL|TRANSFER|HIRE",
+            "details": "specific recommendation details",
+            "timeline": "estimated time",
+            "risk_level": "low|medium|high",
+            "reasoning": "explanation of the recommendation under 50 words"
+        }}
+    }}
+    """
+    
+    print(f"DEBUG: About to invoke executor with input: {input_text[:100]}...")
+    
+    try:
+        print("DEBUG: Executing agent...")
+        #result = await executor.ainvoke({"input": input_text})
+        result = await react_agent.ainvoke({"messages": input_text})
 
-        # --- Parse Output ---
-        parsed_output = output_parser.parse(raw_output)
-        return parsed_output["recommendation"]
+        #print(f"DEBUG: Execution result: {result}")
+        print("Analysis completed successfully")
+        recommendation = result["messages"][-1].content
+        return recommendation
 
     except Exception as e:
-        print(f"Error in analyze_project_gaps: {e}")
+        print(f"DEBUG: Exception in executor.ainvoke: {type(e).__name__}: {str(e)}")
+        print(f"DEBUG: Exception details: {e}")
+        import traceback
+        traceback.print_exc()
+        print(f"Error during analysis: {e}")
         return None
 
-# --- Entry Point ---
-def main():
+# ------------------ Main Entry ------------------
+async def main():
     print("Starting Skill Gap Analysis System...\n")
-    result = analyze_project_gaps("proj1")
-    if result:
-        print("\n--- Final Structured Recommendation ---")
-        print(json.dumps(result, indent=2))
-    else:
-        print("\nAnalysis failed.")
+    agents = await setup_agents()
+    if not agents:
+        print("Failed to setup any agents. Exiting.")
+        return
+
+    print(f"✓ Agents setup: {list(agents.keys())}\n")
+    result = await analyze_project_gaps("proj1", agents)
+
+    print("\n--- Analysis Result ---")
+    print(json.dumps(result, indent=2) if result else "No result returned")
 
 if __name__ == "__main__":
-    main()
+    asyncio.run(main())
