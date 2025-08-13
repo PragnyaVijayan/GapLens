@@ -1,12 +1,12 @@
-from mcp.server.fastmcp import FastMCP
+from fastmcp import FastMCP
 import json
+import asyncio
 
-mcp=FastMCP("Database")
+mcp_employee_info_server = FastMCP("Employee Info Server")
 
-@mcp.tool()
+@mcp_employee_info_server.tool()
 async def get_employees_info():
     """Get the employees info."""
-
     employees = [
         {
             "id": "emp1",
@@ -23,15 +23,14 @@ async def get_employees_info():
             "current_project": "ProjectB"
         }
     ]
-    
-    print(employees)
+    print("Getting employees info")
     return json.dumps(employees)
 
+mcp_project_info_server = FastMCP("Project Info Server")
 
-@mcp.tool()
+@mcp_project_info_server.tool()
 async def get_projects_info():
     """Get the projects info."""
-
     projects = [
         {
             "id": "proj1",
@@ -48,8 +47,21 @@ async def get_projects_info():
             "description": "Build a chatbot using AI"
         }
     ]
-    print(projects)
+    print("Getting projects info")
     return json.dumps(projects)
 
-if __name__=="__main__":
-    mcp.run(transport="streamable-http")
+main_mcp = FastMCP(name="MainApp")
+
+async def setup():
+    await main_mcp.import_server(mcp_employee_info_server, prefix="employee")
+    await main_mcp.import_server(mcp_project_info_server, prefix="project")
+
+if __name__ == "__main__":
+    asyncio.run(setup())
+    main_mcp.run(
+        transport="http",
+        host="127.0.0.1",
+        port=4200,
+        #path="/my-custom-path",
+        log_level="debug",
+    )
