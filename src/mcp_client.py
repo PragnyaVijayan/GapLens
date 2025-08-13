@@ -17,8 +17,17 @@ else:
 async def main():
     client = MultiServerMCPClient(
         {
-            "Database": {
-                "url": "http://localhost:8000/mcp",
+            # "Employee Info Server": {
+            #     "url": "http://localhost:8000/mcp",
+            #     "transport": "streamable_http"
+            # },
+            # "Project Data Server": {
+            #     "url": "http://localhost:8000/mcp",
+            #     "transport": "streamable_http"
+            # }
+
+            "MainApp": {
+                "url": "http://localhost:4200/mcp",
                 "transport": "streamable_http"
             }
         }
@@ -37,7 +46,10 @@ async def main():
     try:
         employee_response = await agent.ainvoke({"messages": [user_message]})
         #print("Employee response:", employee_response.get("output"))
-        print("Employee response (full):", employee_response)
+        # print("Employee response (full):", employee_response)
+        # print("Employee response (output):", employee_response.get("output"))
+        print("Employee response (text):", employee_response["messages"][-1].content)
+
 
     except Exception as e:
         print("Error during agent.ainvoke:", e)
@@ -50,7 +62,8 @@ async def main():
     try:
         project_response = await agent.ainvoke({"messages": [project_message]})
         #print("Project response:", project_response.get("output"))
-        print("Project response (full):", project_response) 
+        #print("Project response (full):", project_response) 
+        print("Project response (text):", project_response["messages"][-1].content)
     except Exception as e:
         print("Error during agent.ainvoke:", e)
         raise
