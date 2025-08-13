@@ -1,233 +1,81 @@
 import streamlit as st
 import requests
-import json
-import time
-from typing import List, Dict, Any
 
-# Configuration
-API_BASE_URL = "http://localhost:8000"
+st.set_page_config(page_title="GapLens Analysis", layout="wide")
 
-def check_api_health():
-    """Check if the API server is running"""
-    try:
-        response = requests.get(f"{API_BASE_URL}/health", timeout=5)
-        return response.status_code == 200
-    except requests.exceptions.RequestException:
-        return False
+API_BASE = "http://localhost:8000/api"
 
-def get_projects() -> List[Dict[str, Any]]:
-    """Fetch available projects from the API"""
-    try:
-        response = requests.get(f"{API_BASE_URL}/api/projects", timeout=10)
-        if response.status_code == 200:
-            data = response.json()
-            print(f"DEBUG: Raw API response: {data}")  # Debug line
-            
-            projects = data.get("projects", [])
-            print(f"DEBUG: Projects from API: {projects}")  # Debug line
-            
-            # Ensure each project has the required structure
-            formatted_projects = []
-            for project in projects:
-                if isinstance(project, dict):
-                    # If it's already a dict, ensure it has name and id
-                    if "name" not in project and "id" not in project:
-                        # If it's just a string, convert to proper format
-                        project_name = str(project)
-                        formatted_projects.append({
-                            "id": project_name,
-                            "name": project_name
-                        })
-                    else:
-                        formatted_projects.append(project)
-                else:
-                    # If it's a string, convert to proper format
-                    project_name = str(project)
-                    formatted_projects.append({
-                        "id": project_name,
-                        "name": project_name
-                    })
-            
-            #print(f"DEBUG: Formatted projects: {formatted_projects}")  # Debug line
-            return formatted_projects
-        else:
-            st.error(f"Failed to fetch projects: {response.status_code}")
-            return []
-    except requests.exceptions.RequestException as e:
-        st.error(f"Error connecting to API: {str(e)}")
-        return []
+# Custom CSS
+st.markdown("""
+<style>
+    body {
+        font-family: 'Inter', sans-serif;
+    }
+    .recommendation-box {
+        background-color: #1E1E1E;
+        padding: 20px;
+        border-radius: 10px;
+        border: 1px solid #333;
+    }
+    .risk-badge {
+        display: inline-block;
+        padding: 4px 10px;
+        border-radius: 8px;
+        font-size: 0.9rem;
+        font-weight: bold;
+    }
+    .risk-low { background-color: #2ECC71; color: white; }
+    .risk-medium { background-color: #F1C40F; color: black; }
+    .risk-high { background-color: #E74C3C; color: white; }
+</style>
+""", unsafe_allow_html=True)
 
-def get_recommendation(project_id: str) -> Dict[str, Any]:
-    """Fetch recommendation for a specific project"""
-    try:
-        response = requests.post(
-            f"{API_BASE_URL}/api/recommendations",
-            json={"project_id": project_id},
-            timeout=30
-        )
-        if response.status_code == 200:
-            return response.json()
-        elif response.status_code == 422:
-            st.error("Validation error: Invalid project ID format")
-            return {}
-        else:
-            st.error(f"Failed to get recommendation: {response.status_code}")
-            return {}
-    except requests.exceptions.RequestException as e:
-        st.error(f"Error getting recommendation: {str(e)}")
-        return {}
+# Fetch projects
+projects = requests.get(f"{API_BASE}/projects").json()["projects"]
+project_names = {p["name"]: p["id"] for p in projects}
 
-def display_recommendation(recommendation_data):
-    """Display the recommendation in a nice Streamlit card format."""
-    
-    if not recommendation_data:
-        st.warning("No recommendation data available")
-        return
-    
-    # Extract recommendation safely
-    outer_rec = recommendation_data.get("recommendation", {})
-    recommendation = outer_rec.get("recommendation", {})  # Nested key
-    
-    if not recommendation:
-        st.warning("Recommendation details are missing")
-        return
-    
-    st.markdown("### 📋 Recommendation Details")
-    
-    # Two-column layout
-    col1, col2 = st.columns(2)
-    
-    with col1:
-        rec_type = recommendation.get("type", "N/A")
-        type_icons = {
-            "UPSKILL": "🎯",
-            "TRANSFER": "🔄",
-            "HIRE": "👥"
-        }
-        icon = type_icons.get(rec_type, "📝")
-        st.markdown(f"{icon} **Type:** {rec_type}")
-        
-        timeline = recommendation.get("timeline", "N/A")
-        st.metric(f"⏱️ Timeline for {rec_type}", timeline)
-    
-    with col2:
-        risk_level = recommendation.get("risk_level", "N/A").lower()
-        risk_colors = {
-            "low": ("🟢", st.success),
-            "medium": ("🟡", st.warning),
-            "high": ("🔴", st.error)
-        }
-        icon, st_func = risk_colors.get(risk_level, ("⚪", st.info))
-        st_func(f"{icon} **Risk Level:** {risk_level.capitalize()}")
-    
-    st.markdown("---")
-    
-    details = recommendation.get("details", "No details provided")
-    reasoning = recommendation.get("reasoning", "No reasoning provided")
-    
-    st.markdown(f"**📝 Details:** {details}")
-    st.markdown(f"**💭 Reasoning:** {reasoning}")
+st.title("📊 GapLens Project Analysis")
 
+# Sidebar
+st.sidebar.header("⚙️ Configuration")
+selected_project_name = st.sidebar.selectbox("Select a project", list(project_names.keys()))
+selected_project_id = project_names[selected_project_name]
 
+if st.sidebar.button("Get Recommendation", use_container_width=True):
+    with st.spinner("Analyzing project..."):
+        rec = requests.post(f"{API_BASE}/recommendations", json={"project_id": selected_project_id}).json()
+        st.session_state["recommendation"] = rec["recommendation"]
 
-def main():
-    st.set_page_config(
-        page_title="GapLens - Project Gap Analysis",
-        page_icon="🔍",
-        layout="wide",
-        initial_sidebar_state="expanded"
-    )
-    
-    # Header
-    st.title("🔍 GapLens - Project Gap Analysis")
-    st.markdown("Analyze skill gaps and get recommendations for your projects")
-    
-    # Check API health
-    if not check_api_health():
-        st.error("❌ API server is not running. Please start the server first.")
-        st.info("To start the server, run: `python src/api_server.py`")
-        return
-    
-    st.success("✅ Connected to API server")
-    
-    # Sidebar
-    st.sidebar.title("⚙️ Configuration")
-    
-    # Fetch projects
-    st.sidebar.markdown("### 📁 Available Projects")
-    
-    if st.sidebar.button("🔄 Refresh Projects"):
-        st.rerun()
-    
-    projects = get_projects()
-    #print(f"DEBUG: Projects returned from get_projects: {projects}")  # Debug line
-    
-    # Add debug info in the sidebar
-    # st.sidebar.markdown(f"**Debug Info:** {len(projects)} projects found")
-    # if projects:
-    #     st.sidebar.markdown("**Project IDs:** " + ", ".join([p.get("id", str(p)) for p in projects]))
-    
-    if not projects:
-        st.sidebar.warning("No projects found")
-        return
-    
-    # Project selection - show names but track full objects
-    selected_project = st.sidebar.selectbox(
-        "Select a project:",
-        projects,
-        index=0 if projects else None,
-        format_func=lambda project: project.get("name", str(project))
-    )
-    
-    # Extract project_id for API calls
-    project_id = selected_project.get("id") if isinstance(selected_project, dict) else str(selected_project)
-    project_name = selected_project.get("name") if isinstance(selected_project, dict) else str(selected_project)
-    
-    st.sidebar.markdown(f"**Selected:** {project_name}")
-    
-    # Main content area
-    st.markdown("---")
-    
-    if selected_project:
-        st.header(f"📊 Analysis for {project_name}")
-        
-        # Get recommendation button
-        if st.button("🚀 Get Recommendation", type="primary"):
-            with st.spinner("Analyzing project gaps..."):
-                recommendation_data = get_recommendation(project_id)  # Use project_id, not full object
-                print(f"DEBUG: Recommendation data: {recommendation_data}")  # Debug line
-                if recommendation_data:
-                    st.success("✅ Analysis completed!")
-                    display_recommendation(recommendation_data)
-                else:
-                    st.error("❌ Failed to get recommendation")
-        
-        # Show project info
-        st.markdown("### 📋 Project Information")
-        st.info(f"Project ID: **{project_id}**")
-        st.info(f"Project Name: **{project_name}**")
-        st.info("Click the button above to analyze this project and get recommendations.")
-        
-        # Add some helpful information
-        st.markdown("---")
-        st.markdown("### 💡 How it works")
-        st.markdown("""
-        1. **Project Selection**: Choose a project from the dropdown in the sidebar
-        2. **Analysis**: Click 'Get Recommendation' to analyze skill gaps
-        3. **Results**: View detailed recommendations including:
-           - Recommendation type (Upskill/Transfer/Hire)
-           - Timeline estimates
-           - Risk assessment
-           - Detailed reasoning
-        """)
-        
-        # Add refresh option
-        if st.button("🔄 Refresh Analysis"):
-            st.rerun()
-    
-    # Footer
-    st.markdown("---")
-    st.markdown("*Powered by GapLens - Intelligent Project Gap Analysis*")
+# Show recommendation
+if "recommendation" in st.session_state:
+    rec = st.session_state["recommendation"]
+    print(f"DEBUG: Recommendation: {rec['recommendation']}")
 
-if __name__ == "__main__":
-    main() 
+    st.subheader(f"📋 Recommendation Details for {selected_project_name}")
+
+    risk_class = f"risk-{rec['recommendation']['risk_level'].lower()}"
+    st.markdown(f"<span class='risk-badge {risk_class}'>Risk: {rec['recommendation']['risk_level'].capitalize()}</span>", unsafe_allow_html=True)
+
+    st.markdown(f"""
+    <div class="recommendation-box">
+        <p><strong>📌 Type:</strong> {rec['recommendation']['type']}</p>
+        <p><strong>⏳ Timeline:</strong> {rec['recommendation']['timeline']}</p>
+        <p><strong>📝 Details:</strong> {rec['recommendation']['details']}</p>
+        <p><strong>💡 Reasoning:</strong> {rec['recommendation']['reasoning']}</p>
+        <p><strong>👤 Employee Name:</strong> {rec['recommendation']['employee_name']}</p>
+        <p><strong>👤 Employee Department:</strong> {rec['recommendation']['department']}</p>
+        <p><strong> Project Start Date:</strong> {rec['recommendation']['project_start_date']}</p>
+    </div>
+    """, unsafe_allow_html=True)
+
+# Project info
+with st.expander("ℹ️ Project Information"):
+    st.write({
+        "Project ID": selected_project_id,
+        "Project Name": selected_project_name
+    })
+
+# Health check
+if st.sidebar.button("Check Health", use_container_width=True):
+    health = requests.get("http://localhost:8000/health").json()
+    st.sidebar.success(f"API Status: {health['status']}")
