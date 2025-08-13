@@ -27,10 +27,10 @@ def make_tool_for_agent(name: str, agent):
     """Create a LangChain tool that wraps an MCP agent"""
     def tool_func(query: str) -> str:
         try:
-            print(f"DEBUG: Entering tool_func for {name}")
-            print(f"DEBUG: Query received: {query}")
-            print(f"DEBUG: Query type: {type(query)}")
-            print(f"DEBUG: Query repr: {repr(query)}")
+            # print(f"DEBUG: Entering tool_func for {name}")
+            # print(f"DEBUG: Query received: {query}")
+            # print(f"DEBUG: Query type: {type(query)}")
+            # print(f"DEBUG: Query repr: {repr(query)}")
             
             # Check if query is already a dict/list
             if isinstance(query, (dict, list)):
@@ -48,14 +48,14 @@ def make_tool_for_agent(name: str, agent):
             
             # Use asyncio.run to handle the async call in a sync context
             result = asyncio.run(agent.ainvoke(messages))
-            print(f"DEBUG: Agent result: {result}")
+            #print(f"DEBUG: Agent result: {result}")
             
             output = result.get("output", str(result))
-            print(f"DEBUG: Extracted output: {output}")
+            #print(f"DEBUG: Extracted output: {output}")
             return output
         except Exception as e:
-            print(f"DEBUG: Exception in tool_func: {type(e).__name__}: {str(e)}")
-            print(f"DEBUG: Exception details: {e}")
+            # print(f"DEBUG: Exception in tool_func: {type(e).__name__}: {str(e)}")
+            # print(f"DEBUG: Exception details: {e}")
             import traceback
             traceback.print_exc()
             return f"Error querying {name}: {str(e)}"
@@ -91,8 +91,8 @@ async def setup_agents():
 
 async def analyze_project_gaps(project_id: str, agents: Dict):
     """Analyze project gaps using MCP agents"""
-    print(f"DEBUG: analyze_project_gaps called with project_id: {project_id}")
-    print(f"DEBUG: Available agents: {list(agents.keys())}")
+    # print(f"DEBUG: analyze_project_gaps called with project_id: {project_id}")
+    # print(f"DEBUG: Available agents: {list(agents.keys())}")
     
     if not agents:
         print("No agents available for analysis")
@@ -105,12 +105,12 @@ async def analyze_project_gaps(project_id: str, agents: Dict):
         return None
     
     tools = main_app["tools"]
-    print(f"DEBUG: Using {len(tools)} MCP tools directly")
+    #print(f"DEBUG: Using {len(tools)} MCP tools directly")
     
     # Create the main analysis agent with MCP tools
-    print("DEBUG: Creating react agent...")
+    #print("DEBUG: Creating react agent...")
     react_agent = create_react_agent(model=llm, tools=tools)
-    print("DEBUG: Creating agent executor...")
+    #print("DEBUG: Creating agent executor...")
     
     # Analysis prompt
     input_text = f"""
@@ -119,7 +119,7 @@ async def analyze_project_gaps(project_id: str, agents: Dict):
     Step 1: Use the available tools to get employee data and skills
     Step 2: Use the available tools to get project requirements
     Step 3: Analyze team skills vs project requirements
-    Step 4: Provide ONE recommendation (UPSKILL OR TRANSFER OR HIRE) based on project timeline
+    Step 4: Provide ONE recommendation (UPSKILL OR TRANSFER from other team OR HIRE) based on project timeline
     
     Output must be valid JSON with a single recommendation in this format:
     {{
@@ -133,10 +133,10 @@ async def analyze_project_gaps(project_id: str, agents: Dict):
     }}
     """
     
-    print(f"DEBUG: About to invoke executor with input: {input_text[:100]}...")
+    #print(f"DEBUG: About to invoke executor with input: {input_text[:100]}...")
     
     try:
-        print("DEBUG: Executing agent...")
+        #print("DEBUG: Executing agent...")
         #result = await executor.ainvoke({"input": input_text})
         result = await react_agent.ainvoke({"messages": input_text})
 
@@ -146,8 +146,8 @@ async def analyze_project_gaps(project_id: str, agents: Dict):
         return recommendation
 
     except Exception as e:
-        print(f"DEBUG: Exception in executor.ainvoke: {type(e).__name__}: {str(e)}")
-        print(f"DEBUG: Exception details: {e}")
+        # print(f"DEBUG: Exception in executor.ainvoke: {type(e).__name__}: {str(e)}")
+        # print(f"DEBUG: Exception details: {e}")
         import traceback
         traceback.print_exc()
         print(f"Error during analysis: {e}")
@@ -162,10 +162,12 @@ async def main():
         return
 
     print(f"✓ Agents setup: {list(agents.keys())}\n")
-    result = await analyze_project_gaps("proj1", agents)
+    for project_id in ["proj1", "proj2", "proj3", "proj4", "proj5"]:
+        result = await analyze_project_gaps(project_id, agents)
+        print(f"Analysis for project {project_id}: {result}")
 
-    print("\n--- Analysis Result ---")
-    print(json.dumps(result, indent=2) if result else "No result returned")
+    #print("\n--- Analys    is Result ---")
+    #print(json.dumps(result, indent=2) if result else "No result returned")
 
 if __name__ == "__main__":
     asyncio.run(main())
