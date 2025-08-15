@@ -1,0 +1,35 @@
+# Core dependencies
+langchain-core>=0.1.27
+langchain-community>=0.0.24
+langchain>=0.1.9
+langchain-ollama>=0.0.1
+typing-extensions>=4.9.0
+json5>=0.9.14
+supabase>=2.0.0
+python-dotenv>=1.0.0
+langchain-mcp>=0.0.1
+langchain-mcp-tools>=0.0.1
+langchain-groq>=0.0.1
+langchain-mcp-adapters>=0.0.1
+mcp>=0.1.0
+langgraph>=0.0.20
+
+# FastAPI and web dependencies
+fastapi>=0.104.1
+uvicorn[standard]>=0.24.0
+pydantic>=2.5.0
+
+# Streamlit UI dependencies
+streamlit>=1.28.0
+plotly>=5.17.0
+pandas>=2.1.0
+
+# Data processing and utilities
+requests>=2.31.0
+python-multipart>=0.0.6
+
+# Development and testing
+pytest>=7.4.0
+pytest-asyncio>=0.21.0
+black>=23.0.0
+flake8>=6.0.0
