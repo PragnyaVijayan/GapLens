@@ -1,0 +1,82 @@
+{
+  "session_id": "session_20250829_012746",
+  "created_at": "2025-08-29T01:27:46.792449",
+  "last_updated": "2025-08-29T01:27:46.835546",
+  "entries": [
+    {
+      "id": "perception_0_012746",
+      "timestamp": "2025-08-29T01:27:46.797130",
+      "agent": "perception",
+      "content": {
+        "intent": "skills_analysis",
+        "entities": [
+          "project",
+          "team"
+        ],
+        "normalized_question": "Analyze skills for project",
+        "context": ""
+      },
+      "reasoning_pattern": "react",
+      "reasoning_steps": [
+        "Interpreted user request using structured prompt.",
+        "Extracted intent and entities using LLM.",
+        "Validated response and normalized user query."
+      ],
+      "confidence": 0.8,
+      "metadata": {
+        "user_input": "What skills do we need for the new AI project?"
+      }
+    },
+    {
+      "id": "analysis_1_012746",
+      "timestamp": "2025-08-29T01:27:46.832142",
+      "agent": "analysis",
+      "content": "Project requires Python, React, and AWS. Team has Python and React skills but lacks AWS expertise.",
+      "reasoning_pattern": "react",
+      "reasoning_steps": [
+        "Reason: Analyzing the input to understand requirements",
+        "Evaluate: Assessing available information and constraints",
+        "Work: Processing the data systematically",
+        "Observe: Identifying patterns and insights",
+        "Optimize: Finding the best possible solution"
+      ],
+      "confidence": 0.8,
+      "metadata": {
+        "question": "Analyze skills for project",
+        "research_facts_count": 4,
+        "market_data_available": true
+      }
+    },
+    {
+      "id": "Decision_2_012746",
+      "timestamp": "2025-08-29T01:27:46.834897",
+      "agent": "Decision",
+      "content": "Skills gap identified: AWS expertise missing. Team member John could be upskilled in AWS within 2 weeks.",
+      "reasoning_pattern": "tot",
+      "reasoning_steps": [
+        "Root: Starting with the main question",
+        "Branch 1: Exploring first approach",
+        "Branch 2: Considering alternative approach",
+        "Evaluate: Comparing approaches",
+        "Select: Choosing the best path"
+      ],
+      "confidence": 0.8,
+      "metadata": {
+        "agent_name": "Decision",
+        "reasoning_pattern": "tot"
+      }
+    }
+  ],
+  "session_data": {
+    "intent": "skills_analysis",
+    "entities": [
+      "project",
+      "team"
+    ],
+    "normalized_question": "Analyze skills for project",
+    "research_facts": [],
+    "analysis": "Project requires Python, React, and AWS. Team has Python and React skills but lacks AWS expertise.",
+    "decision": "Skills gap identified: AWS expertise missing. Team member John could be upskilled in AWS within 2 weeks.",
+    "current_step": "completed"
+  }
+}

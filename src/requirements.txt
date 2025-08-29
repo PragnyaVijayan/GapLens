@@ -1,6 +1,0 @@
-langchain-core>=0.1.27
-langchain-community>=0.0.24
-langchain>=0.1.9
-langchain-ollama>=0.0.1
-typing-extensions>=4.9.0
-json5>=0.9.14

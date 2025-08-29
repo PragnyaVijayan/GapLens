@@ -1,0 +1,74 @@
+{
+  "session_id": "session_20250828_211833",
+  "created_at": "2025-08-28T21:18:33.267294",
+  "last_updated": "2025-08-28T21:18:33.282642",
+  "entries": [
+    {
+      "id": "perception_0_211833",
+      "timestamp": "2025-08-28T21:18:33.268816",
+      "agent": "perception",
+      "content": {
+        "intent": "general_query",
+        "entities": [],
+        "normalized_question": "Analyze skills for general query: How should I choose between different programming languages?"
+      },
+      "reasoning_pattern": "cot",
+      "reasoning_steps": [],
+      "confidence": 0.9,
+      "metadata": {
+        "question": "How should I choose between different programming languages?",
+        "method": "llm_analysis"
+      }
+    },
+    {
+      "id": "analysis_1_211833",
+      "timestamp": "2025-08-28T21:18:33.280959",
+      "agent": "analysis",
+      "content": "Mock response from fake-reasoner",
+      "reasoning_pattern": "react",
+      "reasoning_steps": [
+        "Reason: Understanding the project context and research data",
+        "Evaluate: Assessing skill gaps and team capabilities",
+        "Act: Generating recommendations based on analysis",
+        "Check: Validating recommendations against constraints",
+        "Think: Refining the final analysis"
+      ],
+      "confidence": 0.8,
+      "metadata": {
+        "question": "Analyze skills for general query: How should I choose between different programming languages?",
+        "research_facts_count": 1,
+        "market_data_available": true
+      }
+    },
+    {
+      "id": "decision_2_211833",
+      "timestamp": "2025-08-28T21:18:33.282626",
+      "agent": "decision",
+      "content": "Mock response from fake-reasoner",
+      "reasoning_pattern": "tot",
+      "reasoning_steps": [
+        "Root: Evaluating all available options",
+        "Branch 1: Upskill existing team members",
+        "Branch 2: Internal transfers",
+        "Branch 3: External hiring",
+        "Evaluate: Comparing cost, time, and risk",
+        "Select: Choosing optimal solution"
+      ],
+      "confidence": 0.9,
+      "metadata": {
+        "question": "Analyze skills for general query: How should I choose between different programming languages?",
+        "analysis_length": 32,
+        "decision_type": "final_recommendation"
+      }
+    }
+  ],
+  "session_data": {
+    "intent": "general_query",
+    "entities": [],
+    "normalized_question": "Analyze skills for general query: How should I choose between different programming languages?",
+    "research_facts": [],
+    "analysis": "Mock response from fake-reasoner",
+    "decision": "Mock response from fake-reasoner",
+    "current_step": "completed"
+  }
+}
