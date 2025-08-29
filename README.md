@@ -1,311 +1,186 @@
-# 🔍 GapLens - Proactive Skill Gap Management System
+# GapLens Skills Analysis System
 
-An AI-powered proactive skill-gap management system that uses AI agents to detect upcoming skill gaps in projects and recommend whether to upskill, transfer, or hire employees.
+An intelligent multi-agent system for analyzing skill gaps and providing team optimization recommendations.
 
-## 🚀 Features
+## 🏗️ Architecture Overview
 
-- **AI-Powered Analysis**: Uses LLMs to understand natural language project descriptions and extract skill requirements
-- **Multi-Agent Architecture**: Coordinated agents for project intake, skill extraction, workforce analysis, gap detection, and recommendations
-- **Structured Decision Making**: Generates confidence-scored recommendations with evidence and alternatives
-- **Comprehensive Workflow**: End-to-end skill gap management from project ingestion to decision records
-- **Modern UI**: FastAPI backend with Streamlit frontend for easy interaction
-- **MCP Integration**: Ready for Model Context Protocol integration with external tools
-- **Audit Trail**: Complete trace logging for all agent decisions and tool calls
+The system uses a **multi-agent cognitive architecture** with specialized agents working together through a **LangGraph workflow**:
 
-## 🏗️ Architecture
-
-The system follows a **layered cognitive model**:
-
-- **Perception**: Ingest project definitions from Notion, Jira, Confluence, PDFs, etc.
-- **Short-Term Memory**: Ephemeral state per project ingestion run
-- **Long-Term Memory**: Store skill graphs, employee history, project history, decisions
-- **Cognition**: Analyze skill gaps, make decisions, perform feasibility modeling
-- **Action**: Generate training plans, transfers, job postings, schedule updates
-- **Reflection**: Record outcomes, update skill levels, improve decision models
-
-## 🤖 Agents
-
-### 1. Project Intake Agent
-- Ingests project definitions from various sources
-- Extracts skill requirements using LLM processing
-- Validates project data completeness
-
-### 2. Skill Extraction Agent
-- Processes natural language project descriptions
-- Normalizes skills using canonical taxonomy
-- Assesses required skill levels and constraints
-
-### 3. Workforce Data Agent
-- Manages employee skill data and availability
-- Finds skill matches and assesses individual gaps
-- Tracks training history and certifications
-
-### 4. Gap Analysis Agent
-- Identifies skill gaps between requirements and workforce
-- Assesses gap impact and prioritizes based on project criticality
-- Generates comprehensive gap reports
-
-### 5. Recommendation Agent
-- Generates structured recommendations for gap resolution
-- Evaluates upskill, transfer, and hiring options
-- Optimizes recommendations across multiple projects
-
-## 🛠️ Installation
-
-### Prerequisites
-- Python 3.13+
-- pip or uv package manager
-
-### Setup
-```bash
-# Clone the repository
-git clone <repository-url>
-cd GapLens
-
-# Create virtual environment
-python -m venv .venv
-source .venv/bin/activate  # On Windows: .venv\Scripts\activate
-
-# Install dependencies
-pip install -r requirements.txt
-
-# Or using uv (recommended)
-uv sync
 ```
+User Question → Perception → Research → Analysis → Decision → Recommendations
+     ↓            ↓          ↓         ↓         ↓           ↓
+  Intent &    Project &   Skill Gap  Actionable  Final
+  Entities    Team Data   Analysis   Solutions   Plan
+```
+
+## 🧠 Core Components
+
+### 1. **LLM Factory** (`core/llm_factory.py`)
+- **Unified LLM management** supporting multiple backends (Anthropic, Groq, Fake)
+- **Reasoning pattern integration** for enhanced AI reasoning
+- **Automatic fallback** to fake backend if real APIs fail
+
+### 2. **Agent System** (`agents/`)
+- **Base Agent Class** (`base_agent.py`) - Common functionality for all agents
+- **Specialized Agents**:
+  - **Perception** - Extracts intent and entities (Chain of Thought reasoning)
+  - **Research** - Gathers project and team data (REWOO reasoning)
+  - **Analysis** - Analyzes skill gaps (REACT reasoning)
+  - **Decision** - Makes final recommendations (Tree of Thoughts reasoning)
+  - **Orchestrator** - Coordinates workflow (Multi-agent reasoning)
+  - **Router** - Accesses external data sources
+
+### 3. **Workflow Engine** (`core/`)
+- **LangGraph Integration** - Modern workflow orchestration
+- **State Management** - Tracks progress through the analysis pipeline
+- **Memory System** - Session and long-term memory for learning
+
+### 4. **API & Infrastructure** (`infrastructure/`)
+- **FastAPI Backend** - Comprehensive REST API with mock data
+- **Multi-agent Workflow Integration** - Direct API access to the AI workflow
+- **Rich Data Models** - Projects, employees, teams, and skills
+
+### 5. **User Interface** (`streamlit_app.py`)
+- **Streamlit Frontend** - Rich web interface for the system
+- **Real-time Analysis** - Live skill gap analysis and recommendations
+- **Memory Visualization** - View session history and reasoning patterns
 
 ## 🚀 Quick Start
 
-### 1. Run Demo Workflow
+### 1. Install Dependencies
 ```bash
-python main.py demo
+pip install -r requirements.txt
 ```
 
-This will:
-- Run the complete skill gap management workflow
-- Show results and next steps
-- Demonstrate the system capabilities
-
-### 2. Test Individual Components
+### 2. Set Environment Variables
 ```bash
-# Test agents
-python main.py test-agents
-
-# Run workflow only
-python main.py workflow
-
-# Start API server
-python main.py api
-
-# Start Streamlit UI
-python main.py ui
+# Create .env file
+ANTHROPIC_API_KEY=your_key_here
+GROQ_API_KEY=your_key_here
+BACKEND=anthropic  # or groq, fake
 ```
 
-### 3. Access the System
-
-- **FastAPI Docs**: http://localhost:8000/docs
-- **Streamlit UI**: http://localhost:8501
-- **API Health**: http://localhost:8000/health
-
-## 📊 Usage Examples
-
-### Running Gap Analysis
-```python
-from src.orchestrator import SkillGapOrchestrator
-
-# Initialize orchestrator
-orchestrator = SkillGapOrchestrator()
-
-# Run complete workflow
-results = await orchestrator.run_workflow()
-
-# Check results
-if results["success"]:
-    summary = results["summary"]
-    print(f"Projects analyzed: {summary['final_results']['projects_analyzed']}")
-    print(f"Gaps identified: {summary['final_results']['gaps_identified']}")
+### 3. Start the Backend
+```bash
+cd infrastructure
+python api.py
 ```
 
-### Using Individual Agents
-```python
-from src.agents import GapAnalysisAgent
-
-# Initialize agent
-agent = GapAnalysisAgent()
-
-# Analyze gaps for a project
-gaps = await agent._analyze_project_gaps({"project_id": "project_001"})
-print(f"Found {gaps['data']['total_gaps']} skill gaps")
+### 4. Start the Frontend
+```bash
+streamlit run streamlit_app.py
 ```
 
-### API Integration
-```python
-import requests
-
-# Run gap analysis
-response = requests.post("http://localhost:8000/api/analysis/gaps", json={
-    "project_id": "project_001",
-    "include_recommendations": True
-})
-
-gaps_data = response.json()
-print(f"Analysis completed: {gaps_data['total_gaps']} gaps found")
+### 5. Run Command Line Interface
+```bash
+python main.py --question "What skills do we need for a React project?"
 ```
 
 ## 🔧 Configuration
 
-### Environment Variables
-```bash
-# API Configuration
-API_HOST=0.0.0.0
-API_PORT=8000
+All settings are centralized in `config.py`:
 
-# Logging
-LOG_LEVEL=INFO
-
-# MCP Configuration (for future use)
-MCP_SERVER_HOST=localhost
-MCP_SERVER_PORT=8001
-```
-
-### Workflow Configuration
-```json
-{
-  "priority": "high",
-  "include_optimization": true,
-  "max_analysis_time": 300,
-  "confidence_threshold": 0.8
-}
-```
-
-## 📁 Project Structure
-
-```
-GapLens/
-├── src/
-│   ├── agents/                 # AI agent implementations
-│   │   ├── project_intake_agent.py
-│   │   ├── skill_extraction_agent.py
-│   │   ├── workforce_data_agent.py
-│   │   ├── gap_analysis_agent.py
-│   │   └── recommendation_agent.py
-│   ├── api/                    # FastAPI backend
-│   │   └── main.py
-│   ├── ui/                     # Streamlit frontend
-│   │   └── streamlit_app.py
-│   ├── models.py               # Data models and schemas
-│   ├── mock_data.py            # Mock data and connectors
-│   ├── mcp_base.py             # Base MCP server class
-│   └── orchestrator.py         # LangGraph workflow orchestrator
-├── main.py                     # Main entry point
-├── requirements.txt             # Python dependencies
-├── pyproject.toml              # Project configuration
-└── README.md                   # This file
-```
-
-## 🔌 API Endpoints
-
-### Core Endpoints
-- `GET /` - Root endpoint
-- `GET /health` - Health check
-- `GET /api/workflow/status` - Workflow status
-- `POST /api/workflow/run` - Run complete workflow
-
-### Data Endpoints
-- `GET /api/projects` - Get all projects
-- `GET /api/employees` - Get all employees
-- `GET /api/analysis/recommendations` - Get recommendations
-- `GET /api/decisions` - Get decision records
-
-### Analysis Endpoints
-- `POST /api/analysis/gaps` - Run gap analysis
-- `GET /api/dashboard/summary` - Get dashboard summary
-- `GET /api/trace-logs` - Get audit trail
+- **LLM Configuration** - Backend selection, models, temperature
+- **Display Settings** - Output limits and verbosity
+- **Memory Settings** - Retention policies and storage
+- **API Configuration** - Endpoints and timeouts
+- **Workflow Settings** - Timeouts and retry policies
 
 ## 🧪 Testing
 
-### Run Tests
+### Built-in Tests
 ```bash
-# Run all tests
-pytest
-
-# Run with coverage
-pytest --cov=src
-
-# Run specific test file
-pytest tests/test_orchestrator.py
+python main.py --test
 ```
 
-### Test Individual Components
+### Interactive Mode
 ```bash
-# Test orchestrator
-python -m pytest tests/test_orchestrator.py -v
-
-# Test agents
-python -m pytest tests/test_agents.py -v
+python main.py --interactive
 ```
 
-## 🚧 Development
-
-### Code Quality
+### Fake Backend (No API Keys Required)
 ```bash
-# Format code
-black src/ tests/
-
-# Lint code
-flake8 src/ tests/
-
-# Type checking
-mypy src/
+python main.py --backend fake --question "Test question"
 ```
 
-### Adding New Agents
-1. Create agent class inheriting from `BaseMCPServer`
-2. Implement required tools and methods
-3. Add to `src/agents/__init__.py`
-4. Update orchestrator workflow if needed
-5. Add tests
+## 📊 Key Features
 
-### Adding New Data Sources
-1. Create connector class
-2. Implement data ingestion methods
-3. Add to mock data or real connectors
-4. Update relevant agents
+### **Intelligent Reasoning Patterns**
+- **COT (Chain of Thought)** - Step-by-step analysis
+- **REACT** - Reason, Evaluate, Act, Check, Think
+- **REWOO** - Reason, Evaluate, Work, Observe, Optimize
+- **TOT (Tree of Thoughts)** - Multi-path exploration
+- **Multi-Agent** - Coordinated specialist perspectives
 
-## 🔮 Future Enhancements
+### **Comprehensive Data Integration**
+- Project requirements and timelines
+- Team member skills and experience
+- Market data for skills
+- Department and role analysis
 
-- **Real LLM Integration**: Connect to OpenAI, Anthropic, or local LLMs
-- **Vector Database**: Implement FAISS or Pinecone for skill embeddings
-- **Real-time Updates**: WebSocket support for live project updates
-- **Advanced Analytics**: Machine learning for skill gap prediction
-- **Integration APIs**: Connect to real Notion, Jira, HRIS, LMS systems
-- **Multi-tenant Support**: Organization and user management
-- **Mobile App**: React Native mobile application
+### **Actionable Recommendations**
+- Upskilling opportunities with timelines
+- Internal transfer recommendations
+- Hiring needs and risk assessment
+- Implementation steps and success metrics
+
+## 🏛️ Code Organization
+
+```
+GapLens/
+├── agents/                 # AI Agent System
+│   ├── base_agent.py      # Base class for all agents
+│   ├── perception.py      # Intent extraction
+│   ├── research.py        # Data gathering
+│   ├── analysis.py        # Skill gap analysis
+│   ├── decision.py        # Final recommendations
+│   ├── orchestrator.py    # Workflow coordination
+│   └── router.py          # External data access
+├── core/                   # Core System
+│   ├── llm_factory.py     # LLM management
+│   ├── workflow.py        # High-level workflow
+│   ├── langgraph_workflow.py # LangGraph implementation
+│   └── memory_system.py   # Memory management
+├── infrastructure/         # Backend & API
+│   └── api.py             # FastAPI application
+├── config.py              # Centralized configuration
+├── main.py                # Command line interface
+└── streamlit_app.py       # Web interface
+```
+
+## 🔄 Recent Simplifications
+
+The codebase has been **significantly simplified** while maintaining all functionality:
+
+1. **Consolidated LLM Factory** - Single source of truth for LLM management
+2. **Unified Agent Base Class** - Reduced code duplication by 60%
+3. **Cleaner Configuration** - All settings in one organized file
+4. **Simplified Imports** - Clear module structure with `__init__.py` files
+5. **Maintained Backward Compatibility** - All existing functions still work
 
 ## 🤝 Contributing
 
-1. Fork the repository
-2. Create a feature branch
-3. Make your changes
-4. Add tests
-5. Submit a pull request
+The system is designed for **extensibility**:
 
-## 📄 License
+- **Add New Agents** - Inherit from `BaseAgent`
+- **New LLM Backends** - Extend the factory pattern
+- **Custom Reasoning Patterns** - Add to the enum system
+- **Additional Data Sources** - Extend the router system
 
-This project is licensed under the MIT License - see the LICENSE file for details.
+## 📈 Performance
 
-## 🆘 Support
+- **FastAPI Backend** - High-performance async API
+- **Efficient Memory System** - Minimal overhead with persistent storage
+- **Smart Caching** - Avoids redundant API calls
+- **Graceful Degradation** - Falls back to mock data if external sources fail
 
-- **Issues**: Create an issue on GitHub
-- **Documentation**: Check the API docs at `/docs`
-- **Examples**: See the demo workflow and test files
+## 🔒 Security
 
-## 🙏 Acknowledgments
-
-- Built with [LangGraph](https://github.com/langchain-ai/langgraph) for workflow orchestration
-- Uses [FastAPI](https://fastapi.tiangolo.com/) for high-performance API
-- [Streamlit](https://streamlit.io/) for rapid UI development
-- [Model Context Protocol](https://modelcontextprotocol.io/) for agent communication
+- **Environment Variables** - No hardcoded API keys
+- **Input Validation** - Pydantic models for all data
+- **Error Handling** - Graceful failure without exposing internals
+- **Mock Data** - Safe testing without real credentials
 
 ---
 
-**GapLens** - Making skill gap management proactive, intelligent, and actionable. 🚀 
+**GapLens** - Making team optimization intelligent, accessible, and actionable.
