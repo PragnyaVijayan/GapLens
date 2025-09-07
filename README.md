@@ -36,6 +36,78 @@ graph TD
     style L fill:#f3e5f5
 ```
 
+### **System Architecture Layers**
+
+```mermaid
+graph TD
+    subgraph "Application Layer"
+        A1[Streamlit App]
+        A2[Recommendation App]
+        A3[CLI Interface]
+        A4[API Endpoints]
+    end
+    
+    subgraph "Agent Layer"
+        B1[Perception Agent]
+        B2[Research Agent]
+        B3[Analysis Agent]
+        B4[Decision Agent]
+        B5[Orchestrator Agent]
+        B6[Router Agent]
+    end
+    
+    subgraph "Core Layer"
+        C1[Workflow Engine]
+        C2[LLM Factory]
+        C3[Memory System]
+        C4[State Management]
+        C5[LangGraph Integration]
+    end
+    
+    subgraph "Infrastructure Layer"
+        D1[FastAPI Backend]
+        D2[Data Models]
+        D3[Memory Storage]
+        D4[Session Management]
+        D5[Mock Data]
+    end
+    
+    A1 --> B5
+    A2 --> B5
+    A3 --> B5
+    A4 --> B5
+    
+    B5 --> B1
+    B5 --> B2
+    B5 --> B3
+    B5 --> B4
+    B5 --> B6
+    
+    B1 --> C1
+    B2 --> C1
+    B3 --> C1
+    B4 --> C1
+    B6 --> C1
+    
+    C1 --> C2
+    C1 --> C3
+    C1 --> C4
+    C1 --> C5
+    
+    C2 --> D1
+    C3 --> D3
+    C4 --> D4
+    C5 --> D1
+    
+    style A1 fill:#e3f2fd
+    style A2 fill:#e3f2fd
+    style A3 fill:#e3f2fd
+    style A4 fill:#e3f2fd
+    style B5 fill:#fff3e0
+    style C1 fill:#f3e5f5
+    style D1 fill:#e8f5e8
+```
+
 ### **Workflow Flow**
 ```
 User Question → Perception → Research → Analysis → Decision → Recommendations

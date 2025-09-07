@@ -11,6 +11,7 @@ requests==2.31.0
 # Data processing - Python 3.13 compatible versions
 pandas==2.2.0
 numpy==1.26.4
+matplotlib==3.8.2
 
 # LangChain and LangGraph for AI agents
 langchain==0.1.0
