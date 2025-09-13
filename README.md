@@ -39,22 +39,25 @@ graph TD
 ### **System Architecture Layers**
 
 ```mermaid
-graph TD
-    subgraph "Application Layer"
+graph LR
+    subgraph "User Interface"
         A1[Streamlit App]
         A2[CLI Interface]
         A3[API Endpoints]
     end
     
-    subgraph "Agent Layer"
-        B3[Analysis Agent]
-        B1[Perception Agent]
-        B2[Research Agent]
-        B4[Decision Agent]
+    subgraph "Orchestration"
         B5[Orchestrator Agent]
     end
     
-    subgraph "Core Layer"
+    subgraph "Specialized Agents"
+        B1[Perception Agent]
+        B2[Research Agent]
+        B3[Analysis Agent]
+        B4[Decision Agent]
+    end
+    
+    subgraph "Core Services"
         C1[Workflow Engine]
         C2[LLM Factory]
         C3[Memory System]
@@ -62,38 +65,44 @@ graph TD
         C5[LangGraph Integration]
     end
     
-    subgraph "Infrastructure Layer"
+    subgraph "Infrastructure"
         D1[FastAPI Backend]
         D2[Data Models]
-        D3[Memory Storage]
+        D3[Mock Data]
         D4[Session Management]
-        D5[Mock Data]
+        D5[Memory Storage]
     end
     
+    %% Main Flow
     A1 --> B5
     A2 --> B5
     A3 --> B5
     
     B5 --> B1
-    B5 --> B3
     B5 --> B2
+    B5 --> B3
     B5 --> B4
     
     B1 --> C1
-    B3 --> C1
     B2 --> C1
+    B3 --> C1
     B4 --> C1
-    
-    B3 --> C4
-    C4 --> D1
     
     C1 --> C2
     C1 --> C3
     C1 --> C5
     
     C2 --> D1
-    C3 --> D3
+    C3 --> D4
+    C4 --> D1
     C5 --> D1
+    
+    D1 --> D2
+    D1 --> D3
+    D4 --> D5
+    
+    %% Special connections
+    B3 --> C4
     
     style A1 fill:#e3f2fd
     style A2 fill:#e3f2fd
@@ -263,7 +272,7 @@ The codebase has been **significantly improved** with better organization and cl
 
 > **💡 Current Status**: The Streamlit app is fully functional with clean, robust AI recommendations, team analysis, and project management features. All functionality has been integrated into a single, comprehensive interface.
 
-1. **MCP Pattern Implementation** - Data client follows Model Context Protocol for agent-server communication
+1. **FastAPI Backend Implementation** - Robust REST API with comprehensive data models and endpoints
 2. **Proper Layer Separation** - Data client moved to core layer, agents only in agents/
 3. **Code Cleanup** - Removed 388 lines of dead code and unnecessary files
 4. **Consolidated LLM Factory** - Single source of truth for LLM management
@@ -272,6 +281,25 @@ The codebase has been **significantly improved** with better organization and cl
 7. **Simplified Imports** - Clear module structure with `__init__.py` files
 8. **Maintained Backward Compatibility** - All existing functions still work
 9. **Integrated Recommendation System** - Clean, styled recommendation cards with robust error handling
+
+## 🚀 Future Enhancements
+
+### **High Priority**
+- **Schema Validation** - Implement comprehensive Pydantic schemas for all agent inputs/outputs to ensure data integrity and type safety
+- **MCP Integration** - Migrate from FastAPI to proper Model Context Protocol for standardized agent-server communication
+- **Evaluation & Testing Framework** - Build comprehensive test suite with automated evaluation metrics for agent performance
+- **Long-term Memory Training** - Leverage accumulated session data for agent fine-tuning and continuous improvement
+
+### **Medium Priority**
+- **Advanced Reasoning Patterns** - Implement additional reasoning frameworks (Self-Reflection, Constitutional AI)
+- **Multi-modal Support** - Add support for image and document analysis in skill assessments
+- **Real-time Collaboration** - Enable multiple users to work on the same analysis simultaneously
+- **Advanced Analytics** - Add predictive modeling for skill demand forecasting
+
+### **Long-term Vision**
+- **Federated Learning** - Enable cross-organization learning while maintaining data privacy
+- **Custom Agent Training** - Allow users to train specialized agents for their specific domains
+- **Integration Ecosystem** - Build connectors for popular HR and project management tools
 
 ## 🤝 Contributing
 
