@@ -47,9 +47,9 @@ graph TD
     end
     
     subgraph "Agent Layer"
+        B3[Analysis Agent]
         B1[Perception Agent]
         B2[Research Agent]
-        B3[Analysis Agent]
         B4[Decision Agent]
         B5[Orchestrator Agent]
     end
@@ -75,20 +75,21 @@ graph TD
     A3 --> B5
     
     B5 --> B1
-    B5 --> B2
     B5 --> B3
+    B5 --> B2
     B5 --> B4
     
     B1 --> C1
-    B2 --> C1
     B3 --> C1
+    B2 --> C1
     B4 --> C1
+    
     B3 --> C4
+    C4 --> D1
     
     C1 --> C2
     C1 --> C3
     C1 --> C5
-    C4 --> D1
     
     C2 --> D1
     C3 --> D3
