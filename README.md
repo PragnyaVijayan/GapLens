@@ -233,24 +233,24 @@ python main.py --backend fake --question "Test question"
 
 ## ��️ Code Organization
 GapLens/
-├── agents/ # AI Agent System
-│ ├── base_agent.py # Base class for all agents
-│ ├── perception.py # Intent extraction
-│ ├── research.py # Data gathering
-│ ├── analysis.py # Skill gap analysis
-│ ├── decision.py # Final recommendations
-│ ├── orchestrator.py # Workflow coordination
-│ └── router.py # External data access
-├── core/ # Core System
-│ ├── llm_factory.py # LLM management
-│ ├── workflow.py # High-level workflow
-│ ├── langgraph_workflow.py # LangGraph implementation
-│ └── memory_system.py # Memory management
-├── infrastructure/ # Backend & API
-│ └── api.py # FastAPI application
-├── config.py # Centralized configuration
-├── main.py # Command line interface
-└── streamlit_app.py # Web interface
+├── agents/                   # AI Agent System
+│   ├── base_agent.py         # Base class for all agents
+│   ├── perception.py         # Intent extraction
+│   ├── research.py           # Data gathering
+│   ├── analysis.py           # Skill gap analysis
+│   ├── decision.py           # Final recommendations
+│   ├── orchestrator.py       # Workflow coordination
+│   └── router.py             # External data access
+├── core/                     # Core System
+│   ├── llm_factory.py        # LLM management
+│   ├── workflow.py           # High-level workflow
+│   ├── langgraph_workflow.py # LangGraph implementation
+│   └── memory_system.py      # Memory management
+├── infrastructure/           # Backend & API
+│   └── api.py                # FastAPI application
+├── config.py                 # Centralized configuration
+├── main.py                   # Command line interface
+└── streamlit_app.py          # Web interface
 
 
 ## 🔄 Recent Simplifications
