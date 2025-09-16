@@ -1,0 +1,56 @@
+# GapLens Skills Analysis System - Full Requirements
+# Install with: pip install -r requirements_full.txt
+
+# Core dependencies
+fastapi==0.104.1
+uvicorn==0.24.0
+streamlit==1.28.1
+pydantic==2.5.0
+
+# HTTP client for API calls
+aiohttp==3.9.1
+requests==2.31.0
+
+# Data processing - Python 3.13 compatible versions
+pandas==2.2.0
+numpy==1.26.4
+matplotlib==3.8.3
+
+# Optional dependencies for enhanced features
+plotly==5.9.0
+reportlab==4.4.3
+openpyxl==3.1.5
+seaborn==0.13.0
+
+# LangChain and LangGraph for AI agents
+langchain==0.1.0
+langchain-community==0.0.10
+langchain-core==0.1.7
+langgraph==0.0.20
+
+# LLM Providers
+anthropic==0.40.0
+
+# Environment and configuration
+python-dotenv==1.0.0
+
+# Development dependencies
+pytest==7.4.3
+black==23.11.0
+flake8==6.1.0
+httpx==0.25.2  # Required for FastAPI TestClient
+
+# Additional dependencies for enhanced features
+tenacity>=6.2.0  # For Plotly
+pillow>=9.0.0  # For ReportLab
+charset-normalizer  # For ReportLab
+et-xmlfile  # For OpenPyXL
+contourpy>=1.0.1  # For Matplotlib
+cycler>=0.10  # For Matplotlib
+fonttools>=4.22.0  # For Matplotlib
+kiwisolver>=1.3.1  # For Matplotlib
+packaging>=20.0  # For Matplotlib
+pyparsing>=2.3.1  # For Matplotlib
+python-dateutil>=2.7  # For Matplotlib
+pytz>=2020.1  # For Pandas
+six>=1.5  # For Python dateutil

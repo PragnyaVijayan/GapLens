@@ -10,16 +10,18 @@ from config import DEFAULT_DISPLAY_LIMIT, LLM_OUTPUT_SHOW_MEMORY, WORKFLOW_VERBO
 class MultiAgentWorkflow:
     """Orchestrates the execution of the multi-agent cognitive architecture using LangGraph."""
     
-    def __init__(self, perception_llm, reasoner_llm, display_limit: int = None):
+    def __init__(self, perception_llm, research_llm, analysis_llm, decision_llm, orchestrator_llm, display_limit: int = None):
         self.perception_llm = perception_llm
-        self.reasoner_llm = reasoner_llm
+        self.research_llm = research_llm
+        self.analysis_llm = analysis_llm
+        self.decision_llm = decision_llm
+        self.orchestrator_llm = orchestrator_llm
         self.display_limit = display_limit or DEFAULT_DISPLAY_LIMIT
         
-        # Set LLMs for the workflow
-        set_llms(perception_llm, reasoner_llm)
+        set_llms(perception_llm, research_llm, analysis_llm, decision_llm, orchestrator_llm)
         
         # Create LangGraph workflow
-        self.workflow = create_workflow(perception_llm, reasoner_llm, display_limit)
+        self.workflow = create_workflow(perception_llm, research_llm, analysis_llm, decision_llm, orchestrator_llm, display_limit)
         
         # Get memory system
         self.long_term_memory, self.memory_logger = get_memory_system()

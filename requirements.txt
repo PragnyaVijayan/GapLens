@@ -11,13 +11,19 @@ requests==2.31.0
 # Data processing - Python 3.13 compatible versions
 pandas==2.2.0
 numpy==1.26.4
-matplotlib==3.8.2
+matplotlib==3.8.3
+
+# Optional dependencies for enhanced features
+plotly==5.9.0
+reportlab==4.4.3
+openpyxl==3.1.5
+seaborn==0.13.0
 
 # LangChain and LangGraph for AI agents
-langchain==0.1.0
-langchain-community==0.0.10
-langchain-core==0.1.7
-langgraph==0.0.20
+langchain>=0.1.0
+langchain-community>=0.0.10
+langchain-core>=0.1.8
+langgraph>=0.0.20
 
 # LLM Providers
 anthropic==0.40.0

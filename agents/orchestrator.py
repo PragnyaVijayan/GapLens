@@ -61,7 +61,7 @@ class OrchestratorAgent(BaseAgent):
             return "decision"
         return "done"
 
-    def run_workflow(self, user_question: str, llm, session_memory: SessionMemory) -> Dict[str, Any]:
+    def run_workflow(self, user_question: str, llm, session_memory: SessionMemory, project_id: str = None, scope: str = "company") -> Dict[str, Any]:
         """Run the complete perception-analysis-decision workflow."""
         print("🔁 Orchestrator running full workflow...")
         
@@ -86,10 +86,12 @@ class OrchestratorAgent(BaseAgent):
         analysis_result = analyze_facts(
             state["normalized_question"], 
             llm, 
-            session_memory
+            session_memory,
+            project_id,
+            scope
         )
         state["analysis"] = analysis_result
-        print(f"✅ Analysis completed: {len(analysis_result)} characters")
+        print(f"✅ Analysis completed: {len(analysis_result)} charactes")
         
         # Step 3: Decision
         print("\n🎯 Starting Decision Phase...")

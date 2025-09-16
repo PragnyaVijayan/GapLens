@@ -3,7 +3,12 @@ Core module for GapLens Skills Analysis System
 """
 
 # Import the consolidated LLM factory
-from .llm_factory import make_llm, make_reasoner, FakeLLM, AnthropicLLM, GroqLLM
+from .llm_factory import (
+    make_llm, make_reasoner, FakeLLM, AnthropicLLM, GroqLLM,
+    make_perception_llm, make_research_llm, make_analysis_llm, 
+    make_decision_llm, make_orchestrator_llm,
+    make_all_agent_llms
+)
 
 # Import core workflow components
 from .workflow import MultiAgentWorkflow
@@ -15,11 +20,18 @@ from .memory_system import (
     ReasoningPattern,
     MemoryEntry
 )
+from .data_client import DataClient, get_data_client
 
 __all__ = [
     # LLM Factory
     'make_llm',
     'make_reasoner',
+    'make_perception_llm',
+    'make_research_llm',
+    'make_analysis_llm',
+    'make_decision_llm',
+    'make_orchestrator_llm',
+    'make_all_agent_llms',
     'FakeLLM',
     'AnthropicLLM', 
     'GroqLLM',
@@ -35,5 +47,9 @@ __all__ = [
     'MemoryLogger',
     'get_memory_system',
     'ReasoningPattern',
-    'MemoryEntry'
+    'MemoryEntry',
+    
+    # Data Client
+    'DataClient',
+    'get_data_client'
 ] 

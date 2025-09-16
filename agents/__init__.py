@@ -6,33 +6,22 @@ This package contains specialized agents for skills gap analysis:
 - Analysis Agent: Analyzes skill gaps and recommends solutions
 - Decision Agent: Makes final actionable recommendations
 - Orchestrator Agent: Coordinates the workflow between agents
-- Router Agent: Accesses external data sources
+
+Note: Data access is handled by core/data_client.py (MCP pattern)
 """
 
-from .base_agent import BaseAgent
+# Import functions only to avoid circular imports
 from .perception import perceive_input
 from .analysis import analyze_facts
-from .decision import DecisionAgent, make_decision
-from .orchestrator import OrchestratorAgent, decide_next_step
-from .router import DataRouter, get_router
+from .decision import make_decision
+from .orchestrator import decide_next_step
 
 __all__ = [
-    # Base classes
-    "BaseAgent",
-    
     # Agent functions
     "perceive_input",
-    "analyze_facts",
+    "analyze_facts", 
     "make_decision",
-    "decide_next_step",
-    
-    # Agent classes
-    "DecisionAgent",
-    "OrchestratorAgent",
-    "DataRouter",
-    
-    # Utilities
-    "get_router"
+    "decide_next_step"
 ]
 
 # Version information

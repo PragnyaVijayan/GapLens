@@ -10,7 +10,7 @@ from dotenv import load_dotenv
 load_dotenv()
 
 # Import our modules
-from core import make_llm, make_reasoner
+from core import make_all_agent_llms
 from core.workflow import MultiAgentWorkflow
 
 from config import DEFAULT_DISPLAY_LIMIT, FULL_OUTPUT_DISPLAY_LIMIT
@@ -54,19 +54,27 @@ def run_workflow(question: str, backend: str, full_output: bool = False):
     """Run the multi-agent workflow for a given question."""
     try:
         print(f"🚀 Starting Multi-Agent Workflow with {backend} backend...")
-        print("🧠 Each agent uses its built-in reasoning pattern:")
-        print("   - Perception: Chain of Thought (COT)")
-        print("   - Research: REWOO")
-        print("   - Analysis: REACT")
-        print("   - Decision: Tree of Thoughts (TOT)")
+        print("🧠 Each agent uses its specialized reasoning pattern:")
+        print("   - Perception: Chain of Thought (COT) - Extracts intent and entities")
+        print("   - Research: REWOO - Gathers project and team data")
+        print("   - Analysis: REACT - Analyzes skill gaps")
+        print("   - Decision: Tree of Thoughts (TOT) - Makes final recommendations")
+        print("   - Orchestrator: Multi-agent reasoning - Coordinates workflow")
+        print("   - Data Client: MCP pattern - Accesses server-side data sources")
         
-        # Create LLMs (reasoning patterns are built into each agent)
-        perception_llm = make_llm(backend)
-        reasoner_llm = make_reasoner(backend)
+        # Create specialized LLMs for each agent
+        agent_llms = make_all_agent_llms(backend)
         
         # Create and run workflow with appropriate display limit
         display_limit = FULL_OUTPUT_DISPLAY_LIMIT if full_output else DEFAULT_DISPLAY_LIMIT
-        workflow = MultiAgentWorkflow(perception_llm, reasoner_llm, display_limit)
+        workflow = MultiAgentWorkflow(
+            agent_llms["perception"],
+            agent_llms["research"], 
+            agent_llms["analysis"],
+            agent_llms["decision"],
+            agent_llms["orchestrator"],
+            display_limit
+        )
         result = workflow.run(question)
         
         # Display final results
@@ -121,17 +129,23 @@ def run_interactive(backend: str, full_output: bool = False):
     """Run the system in interactive mode."""
     try:
         print(f"🤖 Multi-Agent System Interactive Mode ({backend} backend)")
-        print("🧠 Each agent uses its built-in reasoning pattern")
+        print("🧠 Each agent uses its specialized reasoning pattern")
         print("Type 'quit' or 'exit' to stop")
         if full_output:
             print("📋 Full output mode enabled")
         print("=" * 50)
         
-        # Create LLMs once (reasoning patterns are built into each agent)
-        perception_llm = make_llm(backend)
-        reasoner_llm = make_reasoner(backend)
+        # Create specialized LLMs for each agent
+        agent_llms = make_all_agent_llms(backend)
         display_limit = FULL_OUTPUT_DISPLAY_LIMIT if full_output else DEFAULT_DISPLAY_LIMIT
-        workflow = MultiAgentWorkflow(perception_llm, reasoner_llm, display_limit)
+        workflow = MultiAgentWorkflow(
+            agent_llms["perception"],
+            agent_llms["research"], 
+            agent_llms["analysis"],
+            agent_llms["decision"],
+            agent_llms["orchestrator"],
+            display_limit
+        )
         
         while True:
             try:
@@ -160,12 +174,17 @@ def run_tests():
     """Run basic tests to verify the system works."""
     try:
         print("🧪 Creating test workflow...")
-        print("🧠 Each agent uses its built-in reasoning pattern")
+        print("🧠 Each agent uses its specialized reasoning pattern")
         
         # Use fake backend for tests
-        perception_llm = make_llm("fake")
-        reasoner_llm = make_reasoner("fake")
-        workflow = MultiAgentWorkflow(perception_llm, reasoner_llm)
+        agent_llms = make_all_agent_llms("fake")
+        workflow = MultiAgentWorkflow(
+            agent_llms["perception"],
+            agent_llms["research"], 
+            agent_llms["analysis"],
+            agent_llms["decision"],
+            agent_llms["orchestrator"]
+        )
         
         # Test questions
         test_questions = [

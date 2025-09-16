@@ -12,7 +12,7 @@ _, memory_logger = get_memory_system()
 
 # Configuration
 BACKEND = os.getenv("BACKEND", "anthropic").lower()
-GROQ_MODEL = os.getenv("GROQ_MODEL", "llama-3.1-8b-instant")
+GROQ_MODEL = os.getenv("GROQ_MODEL", "llama-3.3-70b-versatile")
 ANTHROPIC_MODEL = os.getenv("ANTHROPIC_MODEL", "claude-3-7-sonnet-20250219")
 TEMPERATURE = float(os.getenv("TEMPERATURE", "0.2"))
 
@@ -50,14 +50,110 @@ class FakeLLM:
         memory_logger.log_agent_reasoning("FakeLLM", self.reasoning_pattern, reasoning_steps)
         
         # Simple mock responses based on the first message content
-        if "perception" in str(messages).lower():
-            response_content = '{"intent": "skills_analysis", "entities": ["project", "team"], "normalized_question": "Analyze skills for project"}'
-        elif "research" in str(messages).lower():
+        messages_str = str(messages).lower()
+        print(f"🔍 DEBUG: FakeLLM checking messages: {messages_str[:200]}...")
+        
+        if "perception" in messages_str or "json api" in messages_str:
+            response_content = '''{
+  "intent": "skill_gap_analysis",
+  "entities": {
+    "skills": ["AWS", "Terraform", "Kubernetes", "Linux", "Python"],
+    "projects": ["Cloud Migration Initiative"],
+    "teams": [],
+    "people": [],
+    "timelines": ["2024-07-01 to 2025-01-31"]
+  },
+  "normalized_question": "Analyze skill gaps for Cloud Migration Initiative project",
+  "context": {
+    "constraints": ["Budget: $900,000"],
+    "urgency": "high",
+    "scope": "company"
+  },
+  "analysis_focus": "Cloud migration skills gap analysis"
+}'''
+            print("🔍 DEBUG: Using perception response")
+        elif "decision" in messages_str and "decision agent" in messages_str:
+            print("🔍 DEBUG: Using decision response")
+            response_content = '''{
+  "natural_language_summary": "Based on the analysis, we recommend upskilling John Smith in AWS over 4 weeks. This approach leverages existing team strengths while addressing the critical AWS skill gap. The timeline is realistic given John's strong Python background, and the cost is manageable compared to hiring external talent.",
+  "selected_strategy": {
+    "strategy_name": "Upskill John Smith for AWS",
+    "strategy_type": "upskill",
+    "confidence": "high",
+    "rationale": "John has strong Python background which transfers well to AWS, reducing learning curve and timeline"
+  },
+  "strategy_details": {
+    "primary_action": "Provide John with AWS training and hands-on practice",
+    "target_skill": "AWS Cloud Architecture",
+    "timeline_weeks": 4,
+    "success_probability": "high",
+    "cost_estimate": "medium",
+    "risk_level": "low"
+  },
+  "implementation_plan": {
+    "primary_owner": "John Smith",
+    "support_team": ["David Kim", "Michael Chen"],
+    "timeline_weeks": 4,
+    "key_milestones": ["Week 1: AWS fundamentals", "Week 2: Hands-on labs", "Week 3: Project practice", "Week 4: Certification prep"],
+    "success_metrics": ["AWS certification passed", "Can deploy basic infrastructure", "Confident with core services"],
+    "budget_estimate": "$2,000 - $3,000",
+    "resource_requirements": ["AWS training course", "Lab environment access", "Mentor time"]
+  },
+  "risk_mitigation": {
+    "primary_risks": ["Learning curve steeper than expected", "Project timeline conflicts"],
+    "mitigation_strategies": ["Start with fundamentals", "Schedule dedicated learning time", "Pair with experienced team member"],
+    "contingency_plan": "Consider hiring AWS specialist if upskilling timeline extends beyond 6 weeks",
+    "monitoring_points": ["Weekly progress check-ins", "Hands-on project milestones"]
+  },
+  "review_schedule": {
+    "next_review_date": "2025-10-07",
+    "review_frequency": "Weekly during training, monthly after completion",
+    "success_criteria": ["AWS certification achieved", "Can independently deploy infrastructure", "Team confidence in AWS capabilities"]
+  },
+  "alternative_strategies": [
+    {
+      "strategy_name": "Hire AWS Specialist",
+      "approach": "Recruit external AWS expert",
+      "selection_reason": "Higher cost and longer timeline, but immediate expertise",
+      "confidence_score": 0.7
+    },
+    {
+      "strategy_name": "Transfer from DevOps Team",
+      "approach": "Move David Kim to project team",
+      "selection_reason": "David has AWS expertise but would leave DevOps team short-staffed",
+      "confidence_score": 0.6
+    }
+  ]
+}'''
+        elif "analysis" in messages_str or "analysis agent" in messages_str:
+            print("🔍 DEBUG: Using analysis response")
+            response_content = '''{
+  "skill_gaps": ["AWS", "Cloud Architecture"],
+  "upskilling": [
+    {
+      "employee": "John Smith",
+      "skill_to_learn": "AWS",
+      "timeline_weeks": 4,
+      "confidence": "high",
+      "reason": "Strong Python background transfers well to AWS"
+    }
+  ],
+  "internal_transfers": [],
+  "hiring": [
+    {
+      "role": "AWS Solutions Architect",
+      "required_skills": ["AWS", "Cloud Architecture", "Python"],
+      "urgency": "high",
+      "estimated_cost": "$120,000 - $150,000"
+    }
+  ],
+  "timeline_assessment": "4-6 weeks for team readiness",
+  "risk_factors": ["Learning curve", "Timeline pressure"],
+  "success_probability": "high"
+}'''
+        elif "research" in messages_str:
             response_content = "Project requires Python, React, and AWS. Team has Python and React skills but lacks AWS expertise."
-        elif "analysis" in str(messages).lower():
-            response_content = "Skills gap identified: AWS expertise missing. Team member John could be upskilled in AWS within 2 weeks."
-        elif "decision" in str(messages).lower():
-            response_content = "Recommendation: Upskill John in AWS (2 weeks). Alternative: Transfer Sarah from DevOps team. Risk: Low"
+            print("🔍 DEBUG: Using research response")
         else:
             response_content = "Mock response for testing purposes"
         
@@ -210,9 +306,9 @@ class AnthropicLLM:
 class GroqLLM:
     """Groq LLM client with reasoning pattern support."""
     
-    def __init__(self, api_key: str = None, model: str = "llama3-8b-8192"):
+    def __init__(self, api_key: str = None, model: str = None):
         self.api_key = api_key or os.getenv("GROQ_API_KEY")
-        self.model = model
+        self.model = model or GROQ_MODEL
         self.reasoning_pattern = ReasoningPattern.COT
         
         if not self.api_key:
@@ -346,3 +442,34 @@ def make_llm(backend: str = None, reasoning_pattern: ReasoningPattern = Reasonin
 def make_reasoner(backend: str = None, reasoning_pattern: ReasoningPattern = ReasoningPattern.REWOO):
     """Create a reasoning-optimized language model instance."""
     return make_llm(backend, reasoning_pattern)
+
+def make_perception_llm(backend: str = None):
+    """Create a perception-optimized LLM with Chain of Thought reasoning."""
+    return make_llm(backend, ReasoningPattern.COT)
+
+def make_research_llm(backend: str = None):
+    """Create a research-optimized LLM with REWOO reasoning."""
+    return make_llm(backend, ReasoningPattern.REWOO)
+
+def make_analysis_llm(backend: str = None):
+    """Create an analysis-optimized LLM with REACT reasoning."""
+    return make_llm(backend, ReasoningPattern.REACT)
+
+def make_decision_llm(backend: str = None):
+    """Create a decision-optimized LLM with Tree of Thoughts reasoning."""
+    return make_llm(backend, ReasoningPattern.TOT)
+
+def make_orchestrator_llm(backend: str = None):
+    """Create an orchestrator-optimized LLM with Multi-agent reasoning."""
+    return make_llm(backend, ReasoningPattern.AGENT)
+
+
+def make_all_agent_llms(backend: str = None):
+    """Create all specialized LLMs for the multi-agent system."""
+    return {
+        "perception": make_perception_llm(backend),
+        "research": make_research_llm(backend),
+        "analysis": make_analysis_llm(backend),
+        "decision": make_decision_llm(backend),
+        "orchestrator": make_orchestrator_llm(backend)
+    }

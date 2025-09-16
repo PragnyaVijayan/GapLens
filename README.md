@@ -39,38 +39,41 @@ graph TD
 ### **System Architecture Layers**
 
 ```mermaid
-graph TD
-    subgraph "Application Layer"
+graph LR
+    subgraph "User Interface"
         A1[Streamlit App]
         A2[CLI Interface]
         A3[API Endpoints]
     end
     
-    subgraph "Agent Layer"
+    subgraph "Orchestration"
+        B5[Orchestrator Agent]
+    end
+    
+    subgraph "Specialized Agents"
         B1[Perception Agent]
         B2[Research Agent]
         B3[Analysis Agent]
         B4[Decision Agent]
-        B5[Orchestrator Agent]
-        B6[Router Agent]
     end
     
-    subgraph "Core Layer"
+    subgraph "Core Services"
         C1[Workflow Engine]
         C2[LLM Factory]
         C3[Memory System]
-        C4[State Management]
+        C4[Data Client]
         C5[LangGraph Integration]
     end
     
-    subgraph "Infrastructure Layer"
+    subgraph "Infrastructure"
         D1[FastAPI Backend]
         D2[Data Models]
-        D3[Memory Storage]
+        D3[Mock Data]
         D4[Session Management]
-        D5[Mock Data]
+        D5[Memory Storage]
     end
     
+    %% Main Flow
     A1 --> B5
     A2 --> B5
     A3 --> B5
@@ -79,23 +82,27 @@ graph TD
     B5 --> B2
     B5 --> B3
     B5 --> B4
-    B5 --> B6
     
     B1 --> C1
     B2 --> C1
     B3 --> C1
     B4 --> C1
-    B6 --> C1
     
     C1 --> C2
     C1 --> C3
-    C1 --> C4
     C1 --> C5
     
     C2 --> D1
-    C3 --> D3
-    C4 --> D4
+    C3 --> D4
+    C4 --> D1
     C5 --> D1
+    
+    D1 --> D2
+    D1 --> D3
+    D4 --> D5
+    
+    %% Special connections
+    B3 --> C4
     
     style A1 fill:#e3f2fd
     style A2 fill:#e3f2fd
@@ -120,12 +127,12 @@ graph TD
   - **Analysis** - Analyzes skill gaps (REACT reasoning)
   - **Decision** - Makes final recommendations (Tree of Thoughts reasoning)
   - **Orchestrator** - Coordinates workflow (Multi-agent reasoning)
-  - **Router** - Accesses external data sources
 
-### 3. **Workflow Engine** (`core/`)
+### 3. **Core Services** (`core/`)
 - **LangGraph Integration** - Modern workflow orchestration
 - **State Management** - Tracks progress through the analysis pipeline
 - **Memory System** - Session and long-term memory for learning
+- **Data Client** - MCP-pattern data access for agents to server-side resources
 
 ### 4. **API & Infrastructure** (`infrastructure/`)
 - **FastAPI Backend** - Comprehensive REST API with mock data
@@ -225,6 +232,11 @@ python main.py --backend fake --question "Test question"
 - Market data for skills
 - Department and role analysis
 
+### **MCP Pattern Architecture**
+- **Model Context Protocol** - Agents access server-side data through standardized client
+- **Clean Separation** - Data access logic separated from agent logic
+- **Scalable Design** - Easy to add new data sources and endpoints
+
 ### **Actionable Recommendations**
 - Upskilling opportunities with timelines
 - Internal transfer recommendations
@@ -236,35 +248,58 @@ GapLens/
 ├── agents/ # AI Agent System
 │ ├── base_agent.py # Base class for all agents
 │ ├── perception.py # Intent extraction
-│ ├── research.py # Data gathering
 │ ├── analysis.py # Skill gap analysis
 │ ├── decision.py # Final recommendations
-│ ├── orchestrator.py # Workflow coordination
-│ └── router.py # External data access
-├── core/ # Core System
+│ └── orchestrator.py # Workflow coordination
+├── core/ # Core System Services
 │ ├── llm_factory.py # LLM management
 │ ├── workflow.py # High-level workflow
 │ ├── langgraph_workflow.py # LangGraph implementation
-│ └── memory_system.py # Memory management
+│ ├── memory_system.py # Memory management
+│ └── data_client.py # MCP-pattern data access
 ├── infrastructure/ # Backend & API
-│ └── api.py # FastAPI application
+│ ├── api.py # FastAPI application
+│ ├── mock_data.py # Sample data
+│ └── models.py # Data models
 ├── config.py # Centralized configuration
 ├── main.py # Command line interface
 └── streamlit_app.py # Web interface
 
 
-## 🔄 Recent Simplifications
+## 🔄 Recent Improvements
 
-The codebase has been **significantly simplified** while maintaining all functionality:
+The codebase has been **significantly improved** with better organization and cleaner architecture:
 
 > **💡 Current Status**: The Streamlit app is fully functional with clean, robust AI recommendations, team analysis, and project management features. All functionality has been integrated into a single, comprehensive interface.
 
-1. **Consolidated LLM Factory** - Single source of truth for LLM management
-2. **Unified Agent Base Class** - Reduced code duplication by 60%
-3. **Cleaner Configuration** - All settings in one organized file
-4. **Simplified Imports** - Clear module structure with `__init__.py` files
-5. **Maintained Backward Compatibility** - All existing functions still work
-6. **Integrated Recommendation System** - Clean, styled recommendation cards with robust error handling
+1. **FastAPI Backend Implementation** - Robust REST API with comprehensive data models and endpoints
+2. **Proper Layer Separation** - Data client moved to core layer, agents only in agents/
+3. **Code Cleanup** - Removed 388 lines of dead code and unnecessary files
+4. **Consolidated LLM Factory** - Single source of truth for LLM management
+5. **Unified Agent Base Class** - Reduced code duplication by 60%
+6. **Cleaner Configuration** - All settings in one organized file
+7. **Simplified Imports** - Clear module structure with `__init__.py` files
+8. **Maintained Backward Compatibility** - All existing functions still work
+9. **Integrated Recommendation System** - Clean, styled recommendation cards with robust error handling
+
+## 🚀 Future Enhancements
+
+### **High Priority**
+- **Schema Validation** - Implement comprehensive Pydantic schemas for all agent inputs/outputs to ensure data integrity and type safety
+- **MCP Integration** - Migrate from FastAPI to proper Model Context Protocol for standardized agent-server communication
+- **Evaluation & Testing Framework** - Build comprehensive test suite with automated evaluation metrics for agent performance
+- **Long-term Memory Training** - Leverage accumulated session data for agent fine-tuning and continuous improvement
+
+### **Medium Priority**
+- **Advanced Reasoning Patterns** - Implement additional reasoning frameworks (Self-Reflection, Constitutional AI)
+- **Multi-modal Support** - Add support for image and document analysis in skill assessments
+- **Real-time Collaboration** - Enable multiple users to work on the same analysis simultaneously
+- **Advanced Analytics** - Add predictive modeling for skill demand forecasting
+
+### **Long-term Vision**
+- **Federated Learning** - Enable cross-organization learning while maintaining data privacy
+- **Custom Agent Training** - Allow users to train specialized agents for their specific domains
+- **Integration Ecosystem** - Build connectors for popular HR and project management tools
 
 ## 🤝 Contributing
 
@@ -273,7 +308,7 @@ The system is designed for **extensibility**:
 - **Add New Agents** - Inherit from `BaseAgent`
 - **New LLM Backends** - Extend the factory pattern
 - **Custom Reasoning Patterns** - Add to the enum system
-- **Additional Data Sources** - Extend the router system
+- **Additional Data Sources** - Extend the data client system
 
 ## 📈 Performance
 

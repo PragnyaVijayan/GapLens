@@ -1,0 +1,19 @@
+# Optional dependencies for enhanced features
+# Install with: pip install -r requirements_optional.txt
+
+# For interactive charts and visualizations
+plotly>=5.0.0
+
+# For PDF export functionality
+reportlab>=4.0.0
+
+# For Excel export functionality
+openpyxl>=3.1.0
+
+# For enhanced data visualization
+matplotlib>=3.5.0
+seaborn>=0.11.0
+
+# For advanced data processing
+pandas>=1.5.0
+numpy>=1.21.0

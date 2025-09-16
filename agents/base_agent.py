@@ -7,7 +7,18 @@ from typing import List, Any, Optional, Dict
 from langchain.prompts import ChatPromptTemplate
 from core.memory_system import ReasoningPattern, SessionMemory, MemoryLogger, get_memory_system
 import json
+import re
+import yaml
+from langchain_core.utils.json import parse_json_markdown
 from config import AGENT_VERBOSE_OUTPUT, AGENT_SHOW_JSON_VALIDATION
+from .schemas import (
+    validate_perception_output, 
+    validate_analysis_output, 
+    validate_decision_output,
+    PerceptionOutput,
+    AnalysisOutput,
+    DecisionOutput
+)
 
 class BaseAgent(ABC):
     """Base class for all agents with common functionality."""
@@ -60,61 +71,163 @@ class BaseAgent(ABC):
             raise
     
     def _validate_and_clean_json(self, content: str) -> str:
-        """Validate and clean JSON output from LLM."""
+        """Validate and clean JSON output from LLM with Pydantic schema validation."""
         try:
-            if AGENT_VERBOSE_OUTPUT:
-                print(f"🔍 Validating JSON for {self.name} agent...")
-                print(f"   Input: {content[:100]}...")
+            print(f"🔍 Validating JSON for {self.name} agent...")
+            print(f"   Input: {content[:200]}...")
             
-            # Try to extract JSON from the content
-            content = content.strip()
+            # Enhanced JSON cleaning
+            content = self._clean_json_string(content)
+            print(f"   After cleaning: {content[:200]}...")
             
-            # If it starts with { and ends with }, it's already JSON
-            if content.startswith('{') and content.endswith('}'):
-                # Validate JSON
-                json.loads(content)
-                if AGENT_VERBOSE_OUTPUT:
-                    print(f"   ✅ Valid JSON found")
-                return content
+            # Try to parse the cleaned JSON
+            parsed_json = json.loads(content)
+            print(f"   ✅ JSON parsing successful")
             
-            # Try to find JSON within the content
-            start_idx = content.find('{')
-            end_idx = content.rfind('}')
+            # Validate with Pydantic schema based on agent type
+            try:
+                if self.name.lower() == 'perception':
+                    validated_data = validate_perception_output(parsed_json)
+                    print(f"   ✅ Perception schema validation passed")
+                elif self.name.lower() == 'analysis':
+                    validated_data = validate_analysis_output(parsed_json)
+                    print(f"   ✅ Analysis schema validation passed")
+                elif self.name.lower() == 'decision':
+                    validated_data = validate_decision_output(parsed_json)
+                    print(f"   ✅ Decision schema validation passed")
+                else:
+                    # For other agents, just validate JSON structure
+                    print(f"   ✅ JSON structure validation passed")
+            except Exception as schema_error:
+                print(f"   ⚠️ Schema validation failed: {schema_error}")
+                print(f"   📋 Using raw JSON without schema validation")
+                # Continue with the raw JSON instead of failing
             
-            if start_idx != -1 and end_idx != -1 and end_idx > start_idx:
-                json_content = content[start_idx:end_idx + 1]
-                # Validate JSON
-                json.loads(json_content)
-                if AGENT_VERBOSE_OUTPUT:
-                    print(f"   ✅ JSON extracted from content")
-                return json_content
-            
-            # If no valid JSON found, return empty JSON structure
-            if AGENT_VERBOSE_OUTPUT:
-                print(f"   ⚠️ No valid JSON found, using fallback structure")
-            
-            if self.name.lower() == 'perception':
-                return '{"intent": "unknown", "entities": [], "normalized_question": "", "context": {}, "analysis_focus": ""}'
-            elif self.name.lower() == 'analysis':
-                return '{"skill_gaps": [], "upskilling": [], "internal_transfers": [], "hiring": [], "timeline_assessment": "", "risk_factors": [], "success_probability": "low"}'
-            elif self.name.lower() == 'decision':
-                return '{"decision_summary": "", "primary_strategy": "", "action_plan": {}, "team_assignment": {}, "risk_management": {}, "success_criteria": {}, "next_review_date": ""}'
-            
+            print(f"   ✅ Valid JSON found after cleaning and schema validation")
             return content
             
-        except json.JSONDecodeError:
-            if AGENT_VERBOSE_OUTPUT:
-                print(f"   ❌ JSON validation failed, using fallback structure")
+        except json.JSONDecodeError as e:
+            print(f"   ❌ JSON parsing failed after cleaning: {e}")
+            print(f"   📋 Cleaned content: {content[:200]}...")
+            
+            # Try additional cleaning strategies
+            cleaned_content = self._additional_json_cleaning(content)
+            if cleaned_content:
+                try:
+                    json.loads(cleaned_content)
+                    print("   ✅ Additional cleaning successful")
+                    return cleaned_content
+                except json.JSONDecodeError:
+                    print("   ❌ Additional cleaning also failed")
+                    pass
             
             # Return empty JSON structure if validation fails
-            if self.name.lower() == 'perception':
-                return '{"intent": "unknown", "entities": [], "normalized_question": "", "context": {}, "analysis_focus": ""}'
-            elif self.name.lower() == 'analysis':
-                return '{"skill_gaps": [], "upskilling": [], "internal_transfers": [], "hiring": [], "timeline_assessment": "", "risk_factors": [], "success_probability": "low"}'
-            elif self.name.lower() == 'decision':
-                return '{"decision_summary": "", "primary_strategy": "", "action_plan": {}, "team_assignment": {}, "risk_management": {}, "success_criteria": {}, "next_review_date": ""}'
+            print(f"   🔄 Returning fallback JSON for {self.name}")
+            return self._get_fallback_json()
             
-            return content
+        except Exception as e:
+            print(f"   ❌ Schema validation failed: {e}")
+            print(f"   📋 Parsed content: {content[:200]}...")
+            
+            # Return empty JSON structure if validation fails
+            print(f"   🔄 Returning fallback JSON for {self.name}")
+            return self._get_fallback_json()
+    
+    def _clean_json_string(self, content: str) -> str:
+        """Clean and normalize JSON string from LLM output using multiple strategies."""
+        if not content:
+            return self._get_fallback_json()
+        
+        original_content = content.strip()
+        
+        # Strategy 1: Try LangChain's parse_json_markdown first
+        try:
+            parsed = parse_json_markdown(original_content)
+            if parsed:
+                print("   ✅ LangChain parse_json_markdown successful")
+                return json.dumps(parsed)
+        except Exception as e:
+            print(f"   ⚠️ LangChain parse_json_markdown failed: {e}")
+        
+        # Strategy 2: Try YAML parsing (sometimes LLMs output YAML-like structures)
+        try:
+            # Look for YAML-like content
+            yaml_match = re.search(r'^[a-zA-Z_][a-zA-Z0-9_]*:\s*$', original_content, re.MULTILINE)
+            if yaml_match or ':' in original_content and '{' not in original_content:
+                # Try to parse as YAML
+                yaml_content = original_content
+                # Convert YAML-like structure to JSON
+                parsed_yaml = yaml.safe_load(yaml_content)
+                if parsed_yaml:
+                    print("   ✅ YAML parsing successful")
+                    return json.dumps(parsed_yaml)
+        except Exception as e:
+            print(f"   ⚠️ YAML parsing failed: {e}")
+        
+        # Strategy 3: Enhanced markdown and text removal
+        content = original_content
+        
+        # Remove markdown headers and explanations
+        content = re.sub(r'^#+.*?\n', '', content, flags=re.MULTILINE)
+        content = re.sub(r'^##+.*?\n', '', content, flags=re.MULTILINE)
+        content = re.sub(r'^###+.*?\n', '', content, flags=re.MULTILINE)
+        content = re.sub(r'^Step \d+:.*?\n', '', content, flags=re.MULTILINE)
+        content = re.sub(r'^### Reason.*?\n', '', content, flags=re.MULTILINE)
+        content = re.sub(r'^### Evaluate.*?\n', '', content, flags=re.MULTILINE)
+        content = re.sub(r'^### Act.*?\n', '', content, flags=re.MULTILINE)
+        content = re.sub(r'^### Check.*?\n', '', content, flags=re.MULTILINE)
+        content = re.sub(r'^### Think.*?\n', '', content, flags=re.MULTILINE)
+        
+        # Remove any leading text before the first {
+        if '{' in content:
+            content = content[content.find('{'):]
+        
+        # Remove any trailing text after the last }
+        if '}' in content:
+            content = content[:content.rfind('}') + 1]
+        
+        # If no braces found, return fallback
+        if not content.startswith('{') or not content.endswith('}'):
+            return self._get_fallback_json()
+        
+        # Strategy 4: Enhanced JSON cleaning
+        content = content.replace('\\"', '"')     # Unescape quotes
+        content = content.replace("\\'", "'")     # Unescape single quotes
+        
+        return content
+    
+    def _additional_json_cleaning(self, content: str) -> str:
+        """Additional JSON cleaning strategies."""
+        if not content:
+            return ""
+        
+        # Remove any text before the first {
+        start_idx = content.find('{')
+        if start_idx > 0:
+            content = content[start_idx:]
+        
+        # Remove any text after the last }
+        end_idx = content.rfind('}')
+        if end_idx != -1 and end_idx < len(content) - 1:
+            content = content[:end_idx + 1]
+        
+        # Fix common JSON issues
+        content = content.replace('\\"', '"')  # Unescape quotes
+        content = content.replace("\\'", "'")  # Unescape single quotes
+        content = re.sub(r',(\s*[}\]])', r'\1', content)  # Remove trailing commas
+        
+        return content.strip()
+    
+    def _get_fallback_json(self) -> str:
+        """Get fallback JSON structure for the agent."""
+        if self.name.lower() == 'perception':
+            return '{"intent": "skill_gap_analysis", "entities": {"skills": [], "projects": [], "teams": [], "people": [], "timelines": []}, "normalized_question": "General skills analysis", "context": {"constraints": [], "urgency": "medium", "scope": "company"}, "analysis_focus": "General skills analysis"}'
+        elif self.name.lower() == 'analysis':
+            return '{"skill_gaps": [], "upskilling": [], "internal_transfers": [], "hiring": [], "timeline_assessment": "Analysis pending", "risk_factors": [], "success_probability": "low"}'
+        elif self.name.lower() == 'decision':
+            return '{"natural_language_summary": "Decision pending", "selected_strategy": {"strategy_name": "TBD", "strategy_type": "mixed", "confidence": "low", "rationale": "Analysis pending"}, "strategy_details": {"primary_action": "TBD", "target_skill": "TBD", "timeline_weeks": 4, "success_probability": "low", "cost_estimate": "low", "risk_level": "high"}, "implementation_plan": {"primary_owner": "TBD", "support_team": [], "timeline_weeks": 4, "key_milestones": [], "success_metrics": [], "budget_estimate": "TBD", "resource_requirements": []}, "risk_mitigation": {"primary_risks": [], "mitigation_strategies": [], "contingency_plan": "TBD", "monitoring_points": []}, "review_schedule": {"next_review_date": "TBD", "review_frequency": "TBD", "success_criteria": []}, "alternative_strategies": []}'
+        else:
+            return '{"error": "Unknown agent type"}'
     
     def _log_to_memory(self, session_memory: SessionMemory, content: Any, reasoning_steps: List[str], **kwargs):
         """Log agent activity to session memory."""
