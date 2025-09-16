@@ -285,9 +285,9 @@ The codebase has been **significantly improved** with better organization and cl
 ## 🚀 Future Enhancements
 
 ### **High Priority**
-- **Schema Validation** - Implement comprehensive Pydantic schemas for all agent inputs/outputs to ensure data integrity and type safety
-- **MCP Integration** - Migrate from FastAPI to proper Model Context Protocol for standardized agent-server communication
+- ** Perform Basic Testing **
 - **Evaluation & Testing Framework** - Build comprehensive test suite with automated evaluation metrics for agent performance
+- **MCP Integration** - Migrate from FastAPI to proper Model Context Protocol for standardized agent-server communication
 - **Long-term Memory Training** - Leverage accumulated session data for agent fine-tuning and continuous improvement
 
 ### **Medium Priority**
